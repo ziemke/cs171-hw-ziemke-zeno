@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="utf-8">
+  <body>
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script>
+
+      d3.json("data/countries_2012.json", function(error, data){
+
+        var columns = Object.keys(data[0]);
+
+		var display_columns = ["name", "continent", "gdp", "life_expectancy", "population", "year"]
+
+        var table = d3.select("body").append("table"),
+          thead = table.append("thead")
+                       .attr("class", "thead");
+          tbody = table.append("tbody");
+
+        table.append("caption")
+          .html("World Countries Ranking");
+
+        thead.append("tr").selectAll("th")
+		.data(display_columns)
+        .enter()
+          .append("th")
+          .text(function(d) { return d; })
+          .on("click", function(header, i) {
+            tbody.selectAll("tr").sort(function(a, b) {
+              return d3.descending(a[header], b[header]);
+            });
+          });
+
+        var rows = tbody.selectAll("tr.row")
+          .data(data)
+          .enter()
+          .append("tr").attr("class", "row");
+
+        var cells = rows.selectAll("td")
+          .data(function(row) {
+              return d3.range(display_columns.length).map(function(column, i) {
+				  
+				  var current_column = display_columns[i];
+				  
+				  switch (current_column) {
+					  case "gdp": return d3.format(",.2s")(row[current_column]);
+					  case "life_expectancy": return d3.round(row[current_column], 1);
+					  case "population": return d3.format(",")(row[current_column]);
+					  default: return row[current_column];
+				  }
+                  
+              });
+          })
+          .enter()
+          .append("td")
+          .text(function(d) { return d; })
+
+      });
+    </script> 
+  </body>
+  </html>
