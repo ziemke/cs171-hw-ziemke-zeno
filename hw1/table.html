@@ -9,9 +9,9 @@
 	</style>
   </head>
   <body>
-	 <p>
-		 TODO: 
-		 - Write a function that finds the minimal and maximal years, and displays these values next to the slider to show the range of values which can be browsed.
+	  <pre>
+TODO: 
+
 ASK TF:
 - Question 2 Unklarheit
 - currency/unit gdp (different from gif?)
@@ -19,10 +19,10 @@ ASK TF:
 - desc/asc sorting toggl required?
 - "Extract time-indexed data from the dataset and add all attributes as column dimensions." ?
 - necessary to put comments?
-	</p> 
+</pre> 
 	
 	<div>
-		<label>Time Update: <span id="time_start"></span><input type="range" name="points" min="1995" max="2012" step="1" value="0" id="slider-time" oninput=";"><span id="time_end"></span></label>
+		<label>Time Update: <span id="year_min"></span><input type="range" name="points" min="1995" max="2012" step="1" value="0" id="slider-time" oninput=";"><span id="year_max"></span></label>
 	</div>
 	<div>
 		Filter by: 
@@ -60,6 +60,12 @@ ASK TF:
 				.rollup(function(leaves) {
 					return {"minimum": d3.min(leaves, function(d) {return d.year; }), "maximum": d3.max(leaves, function(d) {return d.year; })} })
 					.entries(allYearData);	
+					
+				d3.select("span[id=year_min]").text(range["minimum"]);	
+				d3.select("span[id=year_max]").text(range["maximum"]);
+				d3.select("input[id=slider-time]")
+				  .attr("min", range["minimum"])
+				  .attr("max", range["maximum"]);
 					
 					
 		}
@@ -162,8 +168,8 @@ ASK TF:
 					  var current_column = display_columns[i];
 					  
 					  switch (current_column) {
-						  case "gdp": return d3.round(row[current_column]/1000000000000, 2) + " Bn";
-						  case "life_expectancy": return d3.round(row[current_column], 1);
+						  case "gdp": return  d3.format(".1fixed")(row[current_column]/1000000000) + " Bn";
+						  case "life_expectancy": return d3.format(".1fixed")(row[current_column]);
 						  case "population": return d3.format(",")(row[current_column]);
 						  default: return row[current_column];
 					  }
