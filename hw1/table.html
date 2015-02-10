@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
 <meta charset="utf-8">
@@ -24,22 +22,36 @@ ASK TF:
 	
 	<div>
 		Filter by: 
-		<label>Africa<input type="checkbox" name="Africa" value="Africa" title="Africa"></input></label>
-		<label>Americas<input type="checkbox" name="Americas" value="Americas" title="Americas"></input></label>
-		<label>Asia<input type="checkbox" name="Asia" value="Asia" title="Asia"></input></label>
-		<label>Europe<input type="checkbox" name="Europe" value="Europe" title="Europe"></input></label>
-		<label>Oceania<input type="checkbox" name="Oceania" value="Oceania" title="Oceania"></input></label>		
+		<label><input type="checkbox" name="Africa" value="Africa" title="Africa"></input>Africa</label>
+		<label><input type="checkbox" name="Americas" value="Americas" title="Americas"></input>Americas</label>
+		<label><input type="checkbox" name="Asia" value="Asia" title="Asia"></input>Asia</label>
+		<label><input type="checkbox" name="Europe" value="Europe" title="Europe"></input>Europe</label>
+		<label><input type="checkbox" name="Oceania" value="Oceania" title="Oceania"></input>Oceania</label>	
+	</div>
+	<div>	
+		Aggregation:
+		<label><input type="radio" name="Aggregation" value="None" checked="checked">None</label>	
+		<label><input type="radio" name="Aggregation" value="Continent">by Continent</label>	
 	</div>
 	
 	<script src="http://d3js.org/d3.v3.min.js"></script>
 	<script>
-	
 	d3.json("data/countries_2012.json", function(error, data){
 			
         var columns = Object.keys(data[0]);
 		var display_columns = ["name", "continent", "gdp", "life_expectancy", "population", "year"];
 		var continentSelection = [];
 	
+		function getFilteredData(input_data) {
+			return input_data.filter(function(d){ 
+				if (continentSelection.length == 0) {
+					return true;
+				} else {
+					return continentSelection.indexOf(d["continent"]) >= 0;
+				}
+			});
+		}
+		
 		d3.selectAll("input").on("change", function() { 
 			continentSelection = [];
 	  
@@ -50,16 +62,23 @@ ASK TF:
 		    })
 			//console.log(continentSelection);
 			
-			filteredData = data.filter(function(d){ 
-				if (continentSelection.length == 0) {
-					return true;
-				} else {
-					return continentSelection.indexOf(d["continent"]) >= 0;
-				}
-			})
 			
-			drawTable(filteredData);
+			if (d3.select("input[value=Continent]")[0][0]["checked"] == true) {
+				
+				var nested_data = d3.nest()
+  				.key(function(d) {  return d.continent; })
+  				.rollup(function(leaves) { return { 
+					"name": leaves.length, "gdp": d3.sum(leaves, function(d) {return d.gdp;}), "population": d3.sum(leaves, function(d) {return d.population;}), "name": leaves[0]["continent"], "continent": leaves[0]["continent"], "life_expectancy": d3.mean(leaves, function(d) {return d.life_expectancy;}),  "year": d3.mean(leaves, function(d) {return d.year;}) }; })
+				.entries(getFilteredData(data));	
+				
+				drawTable(nested_data.map(function(i){return i["values"];}));
+			} else {
+				drawTable(getFilteredData(data));
+			}
 		});
+		
+
+		
 
 		function drawTable(data_draw) {
 	 	  d3.select('table').remove();	
