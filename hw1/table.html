@@ -1,15 +1,56 @@
+
+
 <!DOCTYPE html>
 <html lang="en">
 <meta charset="utf-8">
+  <head>
+  	<style type="text/css">
+ 	.row:nth-child(odd) {
+  		background-color: #CCCCCC;
+	}
+	</style>
+  </head>
   <body>
-    <script src="http://d3js.org/d3.v3.min.js"></script>
-    <script>
+	 <p>
+		 TODO: 
+		 
 
+ASK TF:
+- Question 2 Unklarheit
+- currency/unit gdp (different from gif?)
+- zebra striping with CSS 3 ok?
+- desc/asc sorting toggl required?
+	</p> 
+	
+	<div>
+		Filter by: 
+		<label>Africa<input type="checkbox" name="Africa" value="Africa" title="Africa" onchange="updateContinentSelection()"></input></label>
+		<label>Americas<input type="checkbox" name="Americas" value="Americas" title="Americas" onchange="updateContinentSelection()"></input></label>
+		<label>Asia<input type="checkbox" name="Asia" value="Asia" title="Asia" onchange="updateContinentSelection()"></input></label>
+		<label>Europe<input type="checkbox" name="Europe" value="Europe" title="Europe" onchange="updateContinentSelection()"></input></label>
+		<label>Oceania<input type="checkbox" name="Oceania" value="Oceania" title="Oceania" onchange="updateContinentSelection()"></input></label>		
+	</div>
+	
+	<script src="http://d3js.org/d3.v3.min.js"></script>
+	<script>
+	var continentSelection = [];
+	
+	  function updateContinentSelection() {
+		  continentSelection = [];
+	  
+	    d3.selectAll("input").each(function(d) { 
+          if(d3.select(this).attr("type") == "checkbox" && d3.select(this).node().checked) {
+		    continentSelection.push(d3.select(this).attr("name"));
+	      }
+        })
+		//console.log(continentSelection);
+	  }
+	
       d3.json("data/countries_2012.json", function(error, data){
 
         var columns = Object.keys(data[0]);
 
-		var display_columns = ["name", "continent", "gdp", "life_expectancy", "population", "year"]
+		var display_columns = ["name", "continent", "gdp", "life_expectancy", "population", "year"];
 
         var table = d3.select("body").append("table"),
           thead = table.append("thead")
@@ -19,6 +60,15 @@
         table.append("caption")
           .html("World Countries Ranking");
 
+		  //Sorts columns with strings lexicographic (A-Z) and columns with numbers numerically (Big to Small)
+		  function smartSort(a, b) {
+			  switch (typeof(a)) {
+				  case "string": return d3.ascending(a, b);
+				  case "number": return b - a; //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort
+				  default: return d3.ascending(a, b);
+			  }
+		 } 
+		  
         thead.append("tr").selectAll("th")
 		.data(display_columns)
         .enter()
@@ -26,23 +76,34 @@
           .text(function(d) { return d; })
           .on("click", function(header, i) {
             tbody.selectAll("tr").sort(function(a, b) {
-              return d3.descending(a[header], b[header]);
+				if (a[header] == b[header]) 
+				{
+					return smartSort(a["name"], b["name"]); // break ties by sorting by country name
+				} else {
+					return smartSort(a[header], b[header]);	
+				}
             });
           });
 
         var rows = tbody.selectAll("tr.row")
-          .data(data)
-          .enter()
+		.data(data.filter(function(d){ 
+			if (continentSelection.length == 0) {
+				return true;
+			} else {
+				return continentSelection.indexOf(d["continent"]) >= 0;
+			}
+		  }))	 
+		  .enter()
           .append("tr").attr("class", "row");
 
-        var cells = rows.selectAll("td")
+		  var cells = rows.selectAll("td")
           .data(function(row) {
               return d3.range(display_columns.length).map(function(column, i) {
 				  
 				  var current_column = display_columns[i];
 				  
 				  switch (current_column) {
-					  case "gdp": return d3.format(",.2s")(row[current_column]);
+					  case "gdp": return d3.round(row[current_column]/1000000000000, 2) + " Bn";
 					  case "life_expectancy": return d3.round(row[current_column], 1);
 					  case "population": return d3.format(",")(row[current_column]);
 					  default: return row[current_column];
@@ -51,7 +112,7 @@
               });
           })
           .enter()
-          .append("td")
+          .append("td") 
           .text(function(d) { return d; })
 
       });
