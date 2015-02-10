@@ -11,14 +11,14 @@
   <body>
 	 <p>
 		 TODO: 
-		 
-
+		 - Write a function that finds the minimal and maximal years, and displays these values next to the slider to show the range of values which can be browsed.
 ASK TF:
 - Question 2 Unklarheit
 - currency/unit gdp (different from gif?)
 - zebra striping with CSS 3 ok?
 - desc/asc sorting toggl required?
 - "Extract time-indexed data from the dataset and add all attributes as column dimensions." ?
+- necessary to put comments?
 	</p> 
 	
 	<div>
@@ -40,13 +40,44 @@ ASK TF:
 	
 	<script src="http://d3js.org/d3.v3.min.js"></script>
 	<script>
-	d3.json("data/countries_2012.json", function(error, data){
+	d3.json("data/countries_1995_2012.json", function(error, data){
 			
         var columns = Object.keys(data[0]);
 		var display_columns = ["name", "continent", "gdp", "life_expectancy", "population", "year"];
 		var continentSelection = [];
+		
+		function updateYearsRange(input_data) {
+				
+				// make sure that we catch datasets that might have bigger date ranges than others
+				var allYearData = [];
+				input_data.forEach(function(country) { 
+					country.years.forEach(function(yearData) {
+						allYearData.push(yearData); 
+					});
+				});
+				
+				range = d3.nest()
+				.rollup(function(leaves) {
+					return {"minimum": d3.min(leaves, function(d) {return d.year; }), "maximum": d3.max(leaves, function(d) {return d.year; })} })
+					.entries(allYearData);	
+					
+					
+		}
 	
 		function getFilteredData(input_data) {
+			//filter by selected year
+			selected_year_key = d3.select("input[id=slider-time]")[0][0]["value"]
+			for (var i = 0; i < input_data.length; i++) {
+				selected_year_values = d3.nest()
+				  .key(function(d) {  return d.year; })
+				  .map(input_data[i].years)[selected_year_key][0]
+		
+				for (var key in selected_year_values) { 
+					input_data[i][key] = selected_year_values[key];
+				}
+			}
+			
+			//filter by selected continents
 			return input_data.filter(function(d){ 
 				if (continentSelection.length == 0) {
 					return true;
@@ -56,7 +87,7 @@ ASK TF:
 			});
 		}
 		
-		d3.selectAll("input").on("change", function() { 			
+		function updateTable() {
 			continentSelection = [];
 	  
 		    d3.selectAll("input").each(function(d) { 
@@ -80,11 +111,8 @@ ASK TF:
 			} else {
 				drawTable(filteredData);
 			}
-		});
+		}
 		
-
-		
-
 		function drawTable(data_draw) {
 	 	  d3.select('table').remove();	
 			
@@ -146,8 +174,13 @@ ASK TF:
 		          .append("td") 
 		          .text(function(d) { return d; })
 		  }
-				
+		  
+		  d3.selectAll("input").on("change", function() { updateTable(); });
+		  d3.selectAll("input").on("input", function() { updateTable(); });
+		
+		  updateYearsRange(data);  
 		  drawTable(getFilteredData(data));
+		  
 
       });
     </script> 
