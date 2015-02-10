@@ -18,8 +18,12 @@ ASK TF:
 - currency/unit gdp (different from gif?)
 - zebra striping with CSS 3 ok?
 - desc/asc sorting toggl required?
+- "Extract time-indexed data from the dataset and add all attributes as column dimensions." ?
 	</p> 
 	
+	<div>
+		<label>Time Update: <span id="time_start"></span><input type="range" name="points" min="1995" max="2012" step="1" value="0" id="slider-time" oninput=";"><span id="time_end"></span></label>
+	</div>
 	<div>
 		Filter by: 
 		<label><input type="checkbox" name="Africa" value="Africa" title="Africa"></input>Africa</label>
@@ -52,7 +56,7 @@ ASK TF:
 			});
 		}
 		
-		d3.selectAll("input").on("change", function() { 
+		d3.selectAll("input").on("change", function() { 			
 			continentSelection = [];
 	  
 		    d3.selectAll("input").each(function(d) { 
@@ -62,6 +66,7 @@ ASK TF:
 		    })
 			//console.log(continentSelection);
 			
+			filteredData = getFilteredData(data);
 			
 			if (d3.select("input[value=Continent]")[0][0]["checked"] == true) {
 				
@@ -69,11 +74,11 @@ ASK TF:
   				.key(function(d) {  return d.continent; })
   				.rollup(function(leaves) { return { 
 					"name": leaves.length, "gdp": d3.sum(leaves, function(d) {return d.gdp;}), "population": d3.sum(leaves, function(d) {return d.population;}), "name": leaves[0]["continent"], "continent": leaves[0]["continent"], "life_expectancy": d3.mean(leaves, function(d) {return d.life_expectancy;}),  "year": d3.mean(leaves, function(d) {return d.year;}) }; })
-				.entries(getFilteredData(data));	
+				.entries(filteredData);	
 				
 				drawTable(nested_data.map(function(i){return i["values"];}));
 			} else {
-				drawTable(getFilteredData(data));
+				drawTable(filteredData);
 			}
 		});
 		
@@ -142,7 +147,7 @@ ASK TF:
 		          .text(function(d) { return d; })
 		  }
 				
-		  drawTable(data);
+		  drawTable(getFilteredData(data));
 
       });
     </script> 

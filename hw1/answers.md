@@ -23,7 +23,13 @@ gdp, life expectancy and population I would filter using a range widget that all
 Year I would filter using a range or dropdown widget.  
 Name I would filter using a dropdown widget that allows to select all countries starting with a specific letter (e.g "A")
 
-
+Question 3.1
+-----------
+TBD
+Could you aggregate the table using other columns? If you think yes, explain which ones and how you would group values. Which HTML widgets would be appropriate?
+yes, names with dropbox first letter,
+rest with range to select group range sizes, alternatively range for number of groups
+if data had different dates, we could also group by year with radio buttons
 ### Another deeper heading
  
 Paragraphs are separated
