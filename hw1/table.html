@@ -56,10 +56,10 @@ ASK TF:
 					});
 				});
 				
-				range = d3.nest()
-				.rollup(function(leaves) {
-					return {"minimum": d3.min(leaves, function(d) {return d.year; }), "maximum": d3.max(leaves, function(d) {return d.year; })} })
-					.entries(allYearData);	
+				var range = {
+					"minimum": d3.min(allYearData, function(d) {return d.year; }), 
+				    "maximum": d3.max(allYearData, function(d) {return d.year; })
+				};
 					
 				d3.select("span[id=year_min]").text(range["minimum"]);	
 				d3.select("span[id=year_max]").text(range["maximum"]);
