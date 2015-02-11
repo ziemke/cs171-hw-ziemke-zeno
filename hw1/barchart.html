@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="utf-8">
+<head>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+  <style type="text/css">
+    rect {
+        fill-opacity:.8;
+	}
+	
+	text {
+		font-size: 40%;
+	}
+  </style>
+</head>
+<body>
+	<pre>
+	TODO:
+	- Scale Labels
+	</pre>
+	<div>
+		<label>Time: <span id="year_min"></span><input type="range" name="points" min="1995" max="2012" step="1" value="0" id="slider-time" oninput=";"><span id="year_max"></span></label>
+	</div>
+	<div>	
+		Encode Bars by:
+		<label><input type="radio" name="ColumnSelection" value="population" checked="checked">Population</label>	
+		<label><input type="radio" name="ColumnSelection" value="life_expectancy">Life Expectancy</label>		
+		<label><input type="radio" name="ColumnSelection" value="gdp">GDP</label>	
+	</div>
+	<div>
+		Filter by: 
+		<label><input type="checkbox" name="Africa" value="Africa" title="Africa"></input>Africa</label>
+		<label><input type="checkbox" name="Americas" value="Americas" title="Americas"></input>Americas</label>
+		<label><input type="checkbox" name="Asia" value="Asia" title="Asia"></input>Asia</label>
+		<label><input type="checkbox" name="Europe" value="Europe" title="Europe"></input>Europe</label>
+		<label><input type="checkbox" name="Oceania" value="Oceania" title="Oceania"></input>Oceania</label>	
+	</div>
+	<div>	
+		Aggregation:
+		<label><input type="radio" name="Aggregation" value="None" checked="checked">None</label>	
+		<label><input type="radio" name="Aggregation" value="Continent">by Continent</label>	
+	</div>
+		<div>	
+			Sort by:
+			<label><input type="radio" name="Sorting" value="population" checked="checked">Population</label>	
+			<label><input type="radio" name="Sorting" value="life_expectancy">Life Expectancy</label>		
+			<label><input type="radio" name="Sorting" value="gdp">GDP</label>	
+	</div>
+  <script type="text/javascript">
+ 
+  var margin = {top: 50, bottom: 10, left:100, right: 340};
+    var width = 900 - margin.left - margin.right;
+    var height = 900 - margin.top - margin.bottom;
+ 
+    var xScale = d3.scale.linear().range([0, width]);
+    var yScale = d3.scale.ordinal().rangeRoundBands([0, height], 0.8, 0);
+	var colorScale = d3.scale.category10();
+ 
+    var svg = d3.select("body").append("svg")
+                .attr("width", width+margin.left+margin.right)
+                .attr("height", height+margin.top+margin.bottom);
+ 
+	d3.json("data/countries_1995_2012.json", function(data) {
+		var continentSelection = [];	
+		
+		function updateYearsRange(input_data) {
+				
+				// make sure that we catch datasets that might have bigger date ranges than others
+				var allYearData = [];
+				input_data.forEach(function(country) { 
+					country.years.forEach(function(yearData) {
+						allYearData.push(yearData); 
+					});
+				});
+				
+				var range = {
+					"minimum": d3.min(allYearData, function(d) {return d.year; }), 
+				    "maximum": d3.max(allYearData, function(d) {return d.year; })
+				};
+					
+				d3.select("span[id=year_min]").text(range["minimum"]);	
+				d3.select("span[id=year_max]").text(range["maximum"]);
+				d3.select("input[id=slider-time]")
+				  .attr("min", range["minimum"])
+				  .attr("max", range["maximum"]);
+					
+					
+			  }
+			  
+			  
+		function getFilteredData(input_data) {
+			//filter by selected year
+			selected_year_key = d3.select("input[id=slider-time]")[0][0]["value"]
+			for (var i = 0; i < input_data.length; i++) {
+				selected_year_values = d3.nest()
+				  .key(function(d) {  return d.year; })
+				  .map(input_data[i].years)[selected_year_key][0]
+		
+				for (var key in selected_year_values) { 
+					input_data[i][key] = selected_year_values[key];
+				}
+			}
+			
+			//filter by selected continents
+			return input_data.filter(function(d){ 
+				if (continentSelection.length == 0) {
+					return true;
+				} else {
+					return continentSelection.indexOf(d["continent"]) >= 0;
+				}
+			});
+		}
+		
+		function updateBars() {
+			continentSelection = [];
+	  
+		    d3.selectAll("input").each(function(d) { 
+		      if(d3.select(this).attr("type") == "checkbox" && d3.select(this).node().checked) {
+			    continentSelection.push(d3.select(this).attr("name"));
+		      }
+		    })
+			//console.log(continentSelection);
+			
+			filteredData = getFilteredData(data);
+			
+			if (d3.select("input[value=Continent]")[0][0]["checked"] == true) {
+				
+				var nested_data = d3.nest()
+  				.key(function(d) {  return d.continent; })
+  				.rollup(function(leaves) { return { 
+					"name": leaves.length, "gdp": d3.sum(leaves, function(d) {return d.gdp;}), "population": d3.sum(leaves, function(d) {return d.population;}), "name": leaves[0]["continent"], "continent": leaves[0]["continent"], "life_expectancy": d3.mean(leaves, function(d) {return d.life_expectancy;}),  "year": d3.mean(leaves, function(d) {return d.year;}) }; })
+				.entries(filteredData);	
+				
+				drawBars(nested_data.map(function(i){return i["values"];}));
+			} else {
+				drawBars(filteredData);
+			}
+		}
+			  
+		  
+		function drawBars(data_draw) {
+	 		
+			var selectedColumn = "";
+			
+			if (d3.select("input[value=life_expectancy]")[0][0]["checked"] == true) {
+				selectedColumn = "life_expectancy";
+			} else if (d3.select("input[value=gdp]")[0][0]["checked"] == true) {
+				selectedColumn = "gdp";	
+			} else {
+				selectedColumn = "population";		
+			}
+			
+			var max = d3.max(data_draw, function(d) { return d[selectedColumn]; } );
+	        var min = 0;
+	
+	        xScale.domain([min, max]);
+	        yScale.domain(data_draw.map(function(d) { return d.name; }));
+			colorScale.domain([min, max]);
+			
+			bar_height = height / data_draw.length;
+			
+			d3.select("g").remove();
+			
+			var g = svg.append("g")
+				.attr("transform", "translate("+margin.left+","+margin.top+")");
+			
+	        var groups = g.append("g")
+	                    .selectAll("text")
+	                    .data(data_draw)
+	                  .enter()
+	                    .append("g");
+						
+			var labels = groups.append("text")
+					  .attr("x", xScale(min))
+				      .attr("y", function(d) { return yScale(d.name); })
+				      .attr("dy", ".8em")
+					  .attr("text-anchor", "end")
+				      .text(function(d) { return d.name; });
+	 
+			var bars = groups
+	                    .append("rect")
+	                    .attr("width", function(d) { 
+							return xScale(d[selectedColumn]); })
+						.attr("height", bar_height)
+	                    .attr("x", xScale(min))
+	                    .attr("y", function(d) { return yScale(d.name); })
+						.attr("fill", function(d) { 
+							return colorScale(d[selectedColumn]); })					
+ 		}
+		
+		d3.selectAll("input").on("change", function() { updateBars(); });
+		d3.selectAll("input").on("input", function() { updateBars(); });
+		
+		drawBars(getFilteredData(data));
+		updateYearsRange(data); 
+    });
+  </script>
+</body>
+</html>
