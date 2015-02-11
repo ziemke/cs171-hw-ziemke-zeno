@@ -17,15 +17,18 @@
 	<pre>
 	TODO:
 	- Scale Labels
+	flat_results = data.map(function(d){
+return {country:d.key,year:d.values[0].key,gdp:d.values[0].values.gdp,life_expectancy:d.values[0].values.life_expectancy,population:d.values[0].values.population};
+})
 	</pre>
 	<div>
 		<label>Time: <span id="year_min"></span><input type="range" name="points" min="1995" max="2012" step="1" value="0" id="slider-time" oninput=";"><span id="year_max"></span></label>
 	</div>
 	<div>	
 		Encode Bars by:
-		<label><input type="radio" name="ColumnSelection" value="population" checked="checked">Population</label>	
-		<label><input type="radio" name="ColumnSelection" value="life_expectancy">Life Expectancy</label>		
-		<label><input type="radio" name="ColumnSelection" value="gdp">GDP</label>	
+		<label><input type="radio" name="ColumnSelection" value="select_population" checked="checked">Population</label>	
+		<label><input type="radio" name="ColumnSelection" value="select_life_expectancy">Life Expectancy</label>		
+		<label><input type="radio" name="ColumnSelection" value="select_gdp">GDP</label>	
 	</div>
 	<div>
 		Filter by: 
@@ -42,9 +45,10 @@
 	</div>
 		<div>	
 			Sort by:
-			<label><input type="radio" name="Sorting" value="population" checked="checked">Population</label>	
-			<label><input type="radio" name="Sorting" value="life_expectancy">Life Expectancy</label>		
-			<label><input type="radio" name="Sorting" value="gdp">GDP</label>	
+			<label><input type="radio" name="Sorting" value="sort_name" checked="checked">Name</label>	
+			<label><input type="radio" name="Sorting" value="sort_population">Population</label>	
+			<label><input type="radio" name="Sorting" value="sort_life_expectancy">Life Expectancy</label>		
+			<label><input type="radio" name="Sorting" value="sort_gdp">GDP</label>	
 	</div>
   <script type="text/javascript">
  
@@ -59,6 +63,13 @@
     var svg = d3.select("body").append("svg")
                 .attr("width", width+margin.left+margin.right)
                 .attr("height", height+margin.top+margin.bottom);
+	
+	var g = svg.append("g")
+	.attr("transform", "translate("+margin.left+","+margin.top+")");
+	
+	var groups = [];
+	var bars = [];
+	var labels  = [];
  
 	d3.json("data/countries_1995_2012.json", function(data) {
 		var continentSelection = [];	
@@ -142,9 +153,9 @@
 	 		
 			var selectedColumn = "";
 			
-			if (d3.select("input[value=life_expectancy]")[0][0]["checked"] == true) {
+			if (d3.select("input[value=select_life_expectancy]")[0][0]["checked"] == true) {
 				selectedColumn = "life_expectancy";
-			} else if (d3.select("input[value=gdp]")[0][0]["checked"] == true) {
+			} else if (d3.select("input[value=select_gdp]")[0][0]["checked"] == true) {
 				selectedColumn = "gdp";	
 			} else {
 				selectedColumn = "population";		
@@ -159,25 +170,15 @@
 			
 			bar_height = height / data_draw.length;
 			
-			d3.select("g").remove();
+			g.selectAll("g").remove();
 			
-			var g = svg.append("g")
-				.attr("transform", "translate("+margin.left+","+margin.top+")");
-			
-	        var groups = g.append("g")
+	        groups = g.append("g")
 	                    .selectAll("text")
 	                    .data(data_draw)
 	                  .enter()
 	                    .append("g");
-						
-			var labels = groups.append("text")
-					  .attr("x", xScale(min))
-				      .attr("y", function(d) { return yScale(d.name); })
-				      .attr("dy", ".8em")
-					  .attr("text-anchor", "end")
-				      .text(function(d) { return d.name; });
 	 
-			var bars = groups
+			bars = groups
 	                    .append("rect")
 	                    .attr("width", function(d) { 
 							return xScale(d[selectedColumn]); })
@@ -185,11 +186,57 @@
 	                    .attr("x", xScale(min))
 	                    .attr("y", function(d) { return yScale(d.name); })
 						.attr("fill", function(d) { 
-							return colorScale(d[selectedColumn]); })					
+							return colorScale(d[selectedColumn]); })	
+			
+			labels = groups.append("text")
+					  .attr("x", xScale(min))
+				      .attr("y", function(d) { return yScale(d.name); })
+				      .attr("dy", ".8em")
+					  .attr("text-anchor", "end")
+				      .text(function(d) { 
+						  return d.name; });		
+						
+				
+			var selectedSortColumn = "";
+				
+			if (d3.select("input[value=sort_life_expectancy]")[0][0]["checked"] == true) {
+				selectedSortColumn = "life_expectancy";
+			} else if (d3.select("input[value=sort_gdp]")[0][0]["checked"] == true) {
+				selectedSortColumn = "gdp";	
+			} else if (d3.select("input[value=sort_population]")[0][0]["checked"] == true) {
+				selectedSortColumn = "population";	
+			} else {
+				selectedSortColumn = "name";		
+			}
+			
+			g.selectAll("rect").sort(function (a,b) {
+				return -1;
+				/*if (a[selectedSortColumn] == b[selectedSortColumn]) 
+				{
+					return smartSort(a["name"], b["name"]); // break ties by sorting by country name
+				} else {
+					return smartSort(a[selectedSortColumn], b[selectedSortColumn]);	
+					}*/
+				
+			})
+			.attr("x", function(d, i) { return xScale(i); });
  		}
 		
-		d3.selectAll("input").on("change", function() { updateBars(); });
-		d3.selectAll("input").on("input", function() { updateBars(); });
+		 //Sorts columns with strings lexicographic (A-Z) and columns with numbers numerically (Big to Small)
+		  function smartSort(a, b) {
+			  switch (typeof(a)) {
+				  case "string": return d3.ascending(a, b);
+				  case "number": return b - a; //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort
+				  default: return d3.ascending(a, b);
+			  }
+		  } 
+		
+		  
+		  d3.selectAll("input").on("change", function() { updateBars(); });
+		  d3.selectAll("input").on("input", function() { updateBars(); });
+		  
+		 
+			  
 		
 		drawBars(getFilteredData(data));
 		updateYearsRange(data); 
