@@ -9,7 +9,7 @@
 	}
 	
 	text {
-		font-size: 40%;
+		font-size: 70%;
 	}
   </style>
 </head>
@@ -17,6 +17,7 @@
 	<pre>
 	TODO:
 	- Scale Labels
+	- use ordinal scale for y axis
 	flat_results = data.map(function(d){
 return {country:d.key,year:d.values[0].key,gdp:d.values[0].values.gdp,life_expectancy:d.values[0].values.life_expectancy,population:d.values[0].values.population};
 })
@@ -57,7 +58,7 @@ return {country:d.key,year:d.values[0].key,gdp:d.values[0].values.gdp,life_expec
     var height = 900 - margin.top - margin.bottom;
  
     var xScale = d3.scale.linear().range([0, width]);
-    var yScale = d3.scale.ordinal().rangeRoundBands([0, height], 0.8, 0);
+   // var yScale = d3.scale.ordinal().rangeRoundBands([0, height], 0.8, 0);
 	var colorScale = d3.scale.category10();
  
     var svg = d3.select("body").append("svg")
@@ -165,10 +166,10 @@ return {country:d.key,year:d.values[0].key,gdp:d.values[0].values.gdp,life_expec
 	        var min = 0;
 	
 	        xScale.domain([min, max]);
-	        yScale.domain(data_draw.map(function(d) { return d.name; }));
+	        //yScale.domain([min, data_draw.length]);
 			colorScale.domain([min, max]);
 			
-			bar_height = height / data_draw.length;
+			bar_height = 10 //height / (data_draw.length + 5);
 			
 			g.selectAll("g").remove();
 			
@@ -184,13 +185,17 @@ return {country:d.key,year:d.values[0].key,gdp:d.values[0].values.gdp,life_expec
 							return xScale(d[selectedColumn]); })
 						.attr("height", bar_height)
 	                    .attr("x", xScale(min))
-	                    .attr("y", function(d) { return yScale(d.name); })
+	                    .attr("y", function(d, i) {
+						  return (bar_height + 5) * i;
+					     })
 						.attr("fill", function(d) { 
 							return colorScale(d[selectedColumn]); })	
 			
 			labels = groups.append("text")
 					  .attr("x", xScale(min))
-				      .attr("y", function(d) { return yScale(d.name); })
+				      .attr("y", function(d, i) {
+						  return (bar_height + 5) * i;
+					  })
 				      .attr("dy", ".8em")
 					  .attr("text-anchor", "end")
 				      .text(function(d) { 
@@ -209,17 +214,25 @@ return {country:d.key,year:d.values[0].key,gdp:d.values[0].values.gdp,life_expec
 				selectedSortColumn = "name";		
 			}
 			
-			g.selectAll("rect").sort(function (a,b) {
-				return -1;
-				/*if (a[selectedSortColumn] == b[selectedSortColumn]) 
+			function sortElements(elementType) {
+				g.selectAll(elementType).sort(function (a,b) {
+				if (a[selectedSortColumn] == b[selectedSortColumn]) 
 				{
 					return smartSort(a["name"], b["name"]); // break ties by sorting by country name
 				} else {
 					return smartSort(a[selectedSortColumn], b[selectedSortColumn]);	
-					}*/
+				}
 				
 			})
-			.attr("x", function(d, i) { return xScale(i); });
+			.attr("y", function(d, i) {
+						  return (bar_height + 5) * i;
+					  });
+				
+			}	 
+		
+			sortElements("rect");
+			sortElements("text");	
+					  
  		}
 		
 		 //Sorts columns with strings lexicographic (A-Z) and columns with numbers numerically (Big to Small)
