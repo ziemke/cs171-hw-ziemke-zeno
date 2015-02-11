@@ -192,7 +192,7 @@ return {country:d.key,year:d.values[0].key,gdp:d.values[0].values.gdp,life_expec
 							return colorScale(d[selectedColumn]); })	
 			
 			labels = groups.append("text")
-					  .attr("x", xScale(min))
+						.attr("x", xScale(min) - 3)
 				      .attr("y", function(d, i) {
 						  return (bar_height + 5) * i;
 					  })
