@@ -11,11 +11,12 @@
   <body>
 	  <pre>
 TODO: 
+- persitent sorting 
+- add comas
 
 ASK TF:
 - Question 2 Unklarheit
 - currency/unit gdp (different from gif?)
-- zebra striping with CSS 3 ok?
 - desc/asc sorting toggl required?
 - "Extract time-indexed data from the dataset and add all attributes as column dimensions." ?
 - necessary to put comments?
@@ -100,8 +101,7 @@ ASK TF:
 		      if(d3.select(this).attr("type") == "checkbox" && d3.select(this).node().checked) {
 			    continentSelection.push(d3.select(this).attr("name"));
 		      }
-		    })
-			//console.log(continentSelection);
+		  	})
 			
 			filteredData = getFilteredData(data);
 			
@@ -146,12 +146,30 @@ ASK TF:
 	          .append("th")
 	          .text(function(d) { return d; })
 	          .on("click", function(header, i) {
+				 
+				 if (header == "year") { //year is always the same, so sorting makes no sense
+					  return;
+				 } 
+				  
+				 var sortOrder = (d3.select(this).text().indexOf("▾") >= 0) ? -1 : 1; //1=ASC, -1=DESC, if no sorting or ASC sorting on heading, set DESC sorting. Otherwise set ASC ordering
+				
+				  
+				d3.selectAll("th").text(function( d ) {
+			    	return d.replace("▴", "").replace("▾", "");
+			    })
+		        
+				d3.select(this).text(function( d ) {
+					return d + (sortOrder > 0 ? "▾" : "▴");
+			  	})  
+				
+				
+				
 	            tbody.selectAll("tr").sort(function(a, b) {
-					if (a[header] == b[header]) 
+					if (a[header] == b[header]) // break ties by sorting by country name
 					{
-						return smartSort(a["name"], b["name"]); // break ties by sorting by country name
+						return smartSort(a["name"], b["name"]) * sortOrder; 
 					} else {
-						return smartSort(a[header], b[header]);	
+						return smartSort(a[header], b[header]) * sortOrder;	
 					}
 	            });
 	          });
