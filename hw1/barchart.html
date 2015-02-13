@@ -15,12 +15,18 @@
 </head>
 <body>
 	<pre>
-	TODO:
-	- Scale Labels
-	- use ordinal scale for y axis
-	flat_results = data.map(function(d){
-return {country:d.key,year:d.values[0].key,gdp:d.values[0].values.gdp,life_expectancy:d.values[0].values.life_expectancy,population:d.values[0].values.population};
-})
+TODO:
+- Scale Labels
+- use ordinal scale for y axis
+- flat_results 
+- sort DESC/ASC toggle
+- data.map(function(d){
+	return {country:d.key,year:d.values[0].key,gdp:d.values[0].values.gdp,life_expectancy:d.values[0].values.life_expectancy,population:d.values[0].values.population};})
+
+ASK:
+- Scaling required?
+- show labels
+- do we need to put all in separate g's? then my sorting does not work anymore
 	</pre>
 	<div>
 		<label>Time: <span id="year_min"></span><input type="range" name="points" min="1995" max="2012" step="1" value="0" id="slider-time" oninput=";"><span id="year_max"></span></label>
@@ -173,35 +179,52 @@ return {country:d.key,year:d.values[0].key,gdp:d.values[0].values.gdp,life_expec
 			
 			g.selectAll("g").remove();
 			
-	        groups = g.append("g")
+	        groups = g
 	                    .selectAll("text")
 	                    .data(data_draw)
 	                  .enter()
-	                    .append("g");
+					  .append("g")
+					  .attr("transform",  function(d, i) {
+						  return "translate("+xScale(min)+","+((bar_height + 5) * i)+")";
+					  });
 	 
 			bars = groups
 	                    .append("rect")
 	                    .attr("width", function(d) { 
 							return xScale(d[selectedColumn]); })
 						.attr("height", bar_height)
-	                    .attr("x", xScale(min))
-	                    .attr("y", function(d, i) {
-						  return (bar_height + 5) * i;
-					     })
+	                    .attr("x", 3)
+	                    .attr("y", 0)
 						.attr("fill", function(d) { 
 							return colorScale(d[selectedColumn]); })	
 			
 			labels = groups.append("text")
-						.attr("x", xScale(min) - 3)
-				      .attr("y", function(d, i) {
-						  return (bar_height + 5) * i;
-					  })
+						.attr("x", 0)
+						.attr("y", 0)
 				      .attr("dy", ".8em")
 					  .attr("text-anchor", "end")
+					  .attr("class", "labels")
 				      .text(function(d) { 
 						  return d.name; });		
+						  
+			values = groups.append("text")
+						.attr("x", function(d) { 
+							return xScale(d[selectedColumn]) + 6; })
+						.attr("y", 0)
+				      .attr("dy", ".8em")
+					  .attr("class", "values")
+				      .text(function(d) { 
+						    
+						  switch (selectedColumn) {
+						  case "gdp": return  d3.format(".1fixed")(d[selectedColumn]/1000000000) + " Bn";
+						  case "life_expectancy": return d3.format(".1fixed")(d[selectedColumn]);
+						  case "population": return d3.format(",")(d[selectedColumn]);
+						  default: return d[selectedColumn];
+					  }
+					 });								  
 						
 				
+			// Sort Elements		 
 			var selectedSortColumn = "";
 				
 			if (d3.select("input[value=sort_life_expectancy]")[0][0]["checked"] == true) {
@@ -214,8 +237,7 @@ return {country:d.key,year:d.values[0].key,gdp:d.values[0].values.gdp,life_expec
 				selectedSortColumn = "name";		
 			}
 			
-			function sortElements(elementType) {
-				g.selectAll(elementType).sort(function (a,b) {
+			g.selectAll("g").sort(function (a,b) {
 				if (a[selectedSortColumn] == b[selectedSortColumn]) 
 				{
 					return smartSort(a["name"], b["name"]); // break ties by sorting by country name
@@ -224,14 +246,10 @@ return {country:d.key,year:d.values[0].key,gdp:d.values[0].values.gdp,life_expec
 				}
 				
 			})
-			.attr("y", function(d, i) {
-						  return (bar_height + 5) * i;
+			.attr("transform",  function(d, i) {
+						  return "translate("+xScale(min)+","+((bar_height + 5) * i)+")";
 					  });
 				
-			}	 
-		
-			sortElements("rect");
-			sortElements("text");	
 					  
  		}
 		
