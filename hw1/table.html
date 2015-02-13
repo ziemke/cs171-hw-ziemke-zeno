@@ -3,23 +3,26 @@
 <meta charset="utf-8">
   <head>
   	<style type="text/css">
+	
+	
  	.row:nth-child(odd) {
   		background-color: #CCCCCC;
 	}
+	
+	
 	</style>
   </head>
   <body>
 	  <pre>
 TODO: 
-- persitent sorting 
 - add comas
-
+- jumping headings
+- persistent sorting
+- put some comments
 ASK TF:
 - Question 2 Unklarheit
 - currency/unit gdp (different from gif?)
-- desc/asc sorting toggl required?
 - "Extract time-indexed data from the dataset and add all attributes as column dimensions." ?
-- necessary to put comments?
 </pre> 
 	
 	<div>
@@ -135,7 +138,7 @@ ASK TF:
 			  function smartSort(a, b) {
 				  switch (typeof(a)) {
 					  case "string": return d3.ascending(a, b);
-					  case "number": return b - a; //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort
+					  case "number": return a - b; //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort
 					  default: return d3.ascending(a, b);
 				  }
 			 } 
@@ -151,7 +154,7 @@ ASK TF:
 					  return;
 				 } 
 				  
-				 var sortOrder = (d3.select(this).text().indexOf("▾") >= 0) ? -1 : 1; //1=ASC, -1=DESC, if no sorting or ASC sorting on heading, set DESC sorting. Otherwise set ASC ordering
+				 var sortOrder = (d3.select(this).text().indexOf("▾") >= 0) ? 1 : -1; //1=ASC, -1=DESC, if no sorting or DESC sorting on heading, set ASC sorting. Otherwise set DESC ordering
 				
 				  
 				d3.selectAll("th").text(function( d ) {
@@ -159,7 +162,7 @@ ASK TF:
 			    })
 		        
 				d3.select(this).text(function( d ) {
-					return d + (sortOrder > 0 ? "▾" : "▴");
+					return d + (sortOrder > 0 ? "▴" : "▾");
 			  	})  
 				
 				
