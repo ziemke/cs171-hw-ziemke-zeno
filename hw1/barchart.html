@@ -16,20 +16,19 @@
 <body>
 	<pre>
 TODO:
-- Scale Labels
 - use ordinal scale for y axis
 - flat_results 
 - sort DESC/ASC toggle
+- effect issues
 - data.map(function(d){
 	return {country:d.key,year:d.values[0].key,gdp:d.values[0].values.gdp,life_expectancy:d.values[0].values.life_expectancy,population:d.values[0].values.population};})
 
 ASK:
 - Scaling required?
-- show labels
-- do we need to put all in separate g's? then my sorting does not work anymore
+- effect issue
 	</pre>
 	<div>
-		<label>Time: <span id="year_min"></span><input type="range" name="points" min="1995" max="2012" step="1" value="0" id="slider-time" oninput=";"><span id="year_max"></span></label>
+		<label>Time: <span id="year_min"></span><input type="range" name="points" min="1995" max="2012" step="1" value="0" id="slider-time"><span id="year_max"></span></label>
 	</div>
 	<div>	
 		Encode Bars by:
@@ -39,11 +38,11 @@ ASK:
 	</div>
 	<div>
 		Filter by: 
-		<label><input type="checkbox" name="Africa" value="Africa" title="Africa"></input>Africa</label>
-		<label><input type="checkbox" name="Americas" value="Americas" title="Americas"></input>Americas</label>
-		<label><input type="checkbox" name="Asia" value="Asia" title="Asia"></input>Asia</label>
-		<label><input type="checkbox" name="Europe" value="Europe" title="Europe"></input>Europe</label>
-		<label><input type="checkbox" name="Oceania" value="Oceania" title="Oceania"></input>Oceania</label>	
+		<label><input type="checkbox" name="Filter" value="Africa" title="Africa"></input>Africa</label>
+		<label><input type="checkbox" name="Filter" value="Americas" title="Americas"></input>Americas</label>
+		<label><input type="checkbox" name="Filter" value="Asia" title="Asia"></input>Asia</label>
+		<label><input type="checkbox" name="Filter" value="Europe" title="Europe"></input>Europe</label>
+		<label><input type="checkbox" name="Filter" value="Oceania" title="Oceania"></input>Oceania</label>	
 	</div>
 	<div>	
 		Aggregation:
@@ -59,9 +58,9 @@ ASK:
 	</div>
   <script type="text/javascript">
  
-  var margin = {top: 50, bottom: 10, left:100, right: 340};
-    var width = 900 - margin.left - margin.right;
-    var height = 900 - margin.top - margin.bottom;
+  var margin = {top: 40, bottom: 10, left:130, right: 340};
+  var width = 1000 - margin.left - margin.right;
+  var height = 1850 - margin.top - margin.bottom;
  
     var xScale = d3.scale.linear().range([0, width]);
    // var yScale = d3.scale.ordinal().rangeRoundBands([0, height], 0.8, 0);
@@ -129,12 +128,13 @@ ASK:
 			});
 		}
 		
-		function updateBars() {
+		//mode: 0=create, 1=update 
+		function updateBars(mode, transitionSpeed) {
 			continentSelection = [];
 	  
 		    d3.selectAll("input").each(function(d) { 
 		      if(d3.select(this).attr("type") == "checkbox" && d3.select(this).node().checked) {
-			    continentSelection.push(d3.select(this).attr("name"));
+				  continentSelection.push(d3.select(this).attr("value"));
 		      }
 		    })
 			//console.log(continentSelection);
@@ -149,14 +149,15 @@ ASK:
 					"name": leaves.length, "gdp": d3.sum(leaves, function(d) {return d.gdp;}), "population": d3.sum(leaves, function(d) {return d.population;}), "name": leaves[0]["continent"], "continent": leaves[0]["continent"], "life_expectancy": d3.mean(leaves, function(d) {return d.life_expectancy;}),  "year": d3.mean(leaves, function(d) {return d.year;}) }; })
 				.entries(filteredData);	
 				
-				drawBars(nested_data.map(function(i){return i["values"];}));
+				drawBars(nested_data.map(function(i){return i["values"];}), mode, transitionSpeed);
 			} else {
-				drawBars(filteredData);
+				drawBars(filteredData, mode, transitionSpeed);
 			}
 		}
 			  
 		  
-		function drawBars(data_draw) {
+		//mode: 0=create, 1=update 
+		function drawBars(data_draw, mode, transitionSpeed) {
 	 		
 			var selectedColumn = "";
 			
@@ -177,53 +178,118 @@ ASK:
 			
 			bar_height = 10 //height / (data_draw.length + 5);
 			
-			g.selectAll("g").remove();
-			
 	        groups = g
-	                    .selectAll("text")
-	                    .data(data_draw)
+					    .selectAll("g")
+	                    .data(data_draw);
+						
+			if (mode == 0) {
+				 groups
 	                  .enter()
 					  .append("g")
 					  .attr("transform",  function(d, i) {
 						  return "translate("+xScale(min)+","+((bar_height + 5) * i)+")";
 					  });
 	 
-			bars = groups
-	                    .append("rect")
-	                    .attr("width", function(d) { 
-							return xScale(d[selectedColumn]); })
-						.attr("height", bar_height)
-	                    .attr("x", 3)
-	                    .attr("y", 0)
-						.attr("fill", function(d) { 
-							return colorScale(d[selectedColumn]); })	
-			
-			labels = groups.append("text")
-						.attr("x", 0)
-						.attr("y", 0)
-				      .attr("dy", ".8em")
-					  .attr("text-anchor", "end")
-					  .attr("class", "labels")
-				      .text(function(d) { 
-						  return d.name; });		
-						  
-			values = groups.append("text")
-						.attr("x", function(d) { 
-							return xScale(d[selectedColumn]) + 6; })
-						.attr("y", 0)
-				      .attr("dy", ".8em")
-					  .attr("class", "values")
-				      .text(function(d) { 
-						    
-						  switch (selectedColumn) {
-						  case "gdp": return  d3.format(".1fixed")(d[selectedColumn]/1000000000) + " Bn";
-						  case "life_expectancy": return d3.format(".1fixed")(d[selectedColumn]);
-						  case "population": return d3.format(",")(d[selectedColumn]);
-						  default: return d[selectedColumn];
-					  }
-					 });								  
-						
+				  bars =  groups.append("rect")
+                    .attr("width", function(d) { 
+						return xScale(d[selectedColumn]); })
+					.attr("height", bar_height)
+                    .attr("x", 3)
+                    .attr("y", 0)
+					.attr("fill", function(d) { 
+						return colorScale(d[selectedColumn]); });	
+		
+						labels = groups.append("text")
+					.attr("x", 0)
+					.attr("y", 0)
+			      .attr("dy", ".8em")
+				  .attr("text-anchor", "end")
+				  .attr("class", "labels")
+			      .text(function(d) { 
+					  return d.name; });		
+					  
+					  values =  groups.append("text")
+					.attr("x", function(d) { 
+						return xScale(d[selectedColumn]) + 6; })
+					.attr("y", 0)
+			      .attr("dy", ".8em")
+				  .attr("class", "values")
+			      .text(function(d) { 
+					    
+					  switch (selectedColumn) {
+					  case "gdp": return  d3.format(".1fixed")(d[selectedColumn]/1000000000) + " Bn";
+					  case "life_expectancy": return d3.format(".1fixed")(d[selectedColumn]);
+					  case "population": return d3.format(",")(d[selectedColumn]);
+					  default: return d[selectedColumn];
+				  }
+			  });	
+				  
 				
+			} else {
+				newGroups= groups
+	                  .enter()
+					  .append("g")
+					  
+				groups.exit()
+				//.transition()
+					//.duration(1000)
+					//.style("fill-opacity", 0)
+					.remove();
+				
+				//create new elements	  
+				newGroups.append("rect")
+					.attr("height", bar_height)
+                    .attr("x", 3)
+                    .attr("y", 0)
+					.style("fill-opacity", 0)
+					.transition()
+					.duration(1000)
+					.style("fill-opacity", 1);
+		
+				labels = groups.append("text")
+					.attr("x", 0)
+					.attr("y", 0)
+			    	.attr("dy", ".8em")
+				 	.attr("text-anchor", "end")
+				 	.attr("class", "labels");		
+					  
+				values =  groups.append("text")
+					.attr("y", 0)
+			     	.attr("dy", ".8em")
+				 	.attr("class", "values");		
+				
+				//Update all
+				groups
+					  .attr("transform",  function(d, i) {
+						  return "translate("+xScale(min)+","+((bar_height + 5) * i)+")";
+					  });
+	 
+				groups.select("rect")
+                    .attr("width", function(d) { 
+						return xScale(d[selectedColumn]); })
+					.attr("fill", function(d) { 
+						return colorScale(d[selectedColumn]); });	
+		
+				groups.select("text.labels")
+			      .text(function(d) { 
+					  return d.name; });		
+					  
+				groups.select("text.values")
+					.attr("x", function(d) { 
+						return xScale(d[selectedColumn]) + 6; })
+			     	.text(function(d) { 
+					    
+					  switch (selectedColumn) {
+					  case "gdp": return  d3.format(".1fixed")(d[selectedColumn]/1000000000) + " Bn";
+					  case "life_expectancy": return d3.format(".1fixed")(d[selectedColumn]);
+					  case "population": return d3.format(",")(d[selectedColumn]);
+					  default: return d[selectedColumn];
+				  }
+			  });	
+			  
+					
+			}
+						
 			// Sort Elements		 
 			var selectedSortColumn = "";
 				
@@ -237,7 +303,7 @@ ASK:
 				selectedSortColumn = "name";		
 			}
 			
-			g.selectAll("g").sort(function (a,b) {
+			groupsToSort = g.selectAll("g").sort(function (a,b) {
 				if (a[selectedSortColumn] == b[selectedSortColumn]) 
 				{
 					return smartSort(a["name"], b["name"]); // break ties by sorting by country name
@@ -246,10 +312,17 @@ ASK:
 				}
 				
 			})
-			.attr("transform",  function(d, i) {
-						  return "translate("+xScale(min)+","+((bar_height + 5) * i)+")";
-					  });
-				
+		
+			if (transitionSpeed > 0) {
+				groupsToSort =	groupsToSort
+					.transition()
+					//.delay(1000)
+					.duration(transitionSpeed)
+			}
+			
+			groupsToSort.attr("transform",  function(d, i) {
+			  return "translate("+xScale(min)+","+((bar_height + 5) * i)+")";
+		  });	  
 					  
  		}
 		
@@ -263,13 +336,15 @@ ASK:
 		  } 
 		
 		  
-		  d3.selectAll("input").on("change", function() { updateBars(); });
-		  d3.selectAll("input").on("input", function() { updateBars(); });
+		  d3.selectAll("input").on("change", function() { updateBars(1, 1000); });
+		  d3.selectAll("input#slider-time").on("change","").on("input", function() { updateBars(1, 0); });
+		  d3.selectAll("input[name=ColumnSelection]").on("change", function() { updateBars(1, 0); });
+		  
 		  
 		 
 			  
 		
-		drawBars(getFilteredData(data));
+		drawBars(getFilteredData(data), 0, 0);
 		updateYearsRange(data); 
     });
   </script>

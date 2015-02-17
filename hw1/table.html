@@ -17,12 +17,11 @@
 TODO: 
 - add comas
 - jumping headings
-- persistent sorting
 - put some comments
 ASK TF:
 - Question 2 Unklarheit
 - currency/unit gdp (different from gif?)
-- "Extract time-indexed data from the dataset and add all attributes as column dimensions." ?
+- sort order
 </pre> 
 	
 	<div>
@@ -122,6 +121,37 @@ ASK TF:
 			}
 		}
 		
+		var currentSort = {"column": "name", "order": 1}
+			 
+		 function sortColumns() {
+			d3.selectAll("th").text(function( d ) {
+		    	return d.replace("▴", "").replace("▾", "");
+		    })
+	        
+			d3.select("th#column_" + currentSort["column"]).text(function( d ) {
+				return d + (currentSort["order"] > 0 ? "▴" : "▾");
+		  	})  
+			
+			
+	        tbody.selectAll("tr").sort(function(a, b) {
+				if (a[currentSort["column"]] == b[currentSort["column"]]) // break ties by sorting by country name
+				{
+					return smartSort(a["name"], b["name"]) * currentSort["order"]; 
+				} else {
+					return smartSort(a[currentSort["column"]], b[currentSort["column"]]) * currentSort["order"];	
+				}
+	        });
+			
+			//Sorts columns with strings lexicographic (A-Z) and columns with numbers numerically (Big to Small)
+			  function smartSort(a, b) {
+				  switch (typeof(a)) {
+					  case "string": return d3.ascending(a, b);
+					  case "number": return a - b; //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort
+					  default: return d3.ascending(a, b);
+				  }
+			  } 
+		}
+		
 		function drawTable(data_draw) {
 	 	  d3.select('table').remove();	
 			
@@ -133,48 +163,23 @@ ASK TF:
 		 
 	        table.append("caption")
 	          .html("World Countries Ranking");
-	
-			  //Sorts columns with strings lexicographic (A-Z) and columns with numbers numerically (Big to Small)
-			  function smartSort(a, b) {
-				  switch (typeof(a)) {
-					  case "string": return d3.ascending(a, b);
-					  case "number": return a - b; //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort
-					  default: return d3.ascending(a, b);
-				  }
-			 } 
+			 
 			  
 	        thead.append("tr").selectAll("th")
 			.data(display_columns)
 	        .enter()
 	          .append("th")
 	          .text(function(d) { return d; })
+			  .attr("id", function(d) { return "column_" + d; } )
 	          .on("click", function(header, i) {
-				 
-				 if (header == "year") { //year is always the same, so sorting makes no sense
+				if (header == "year") { //year is always the same, so sorting makes no sense
 					  return;
-				 } 
-				  
-				 var sortOrder = (d3.select(this).text().indexOf("▾") >= 0) ? 1 : -1; //1=ASC, -1=DESC, if no sorting or DESC sorting on heading, set ASC sorting. Otherwise set DESC ordering
+				} 
 				
-				  
-				d3.selectAll("th").text(function( d ) {
-			    	return d.replace("▴", "").replace("▾", "");
-			    })
-		        
-				d3.select(this).text(function( d ) {
-					return d + (sortOrder > 0 ? "▴" : "▾");
-			  	})  
+				currentSort["order"] =  (currentSort["column"] == header) ?	currentSort["order"] * -1 : -1; //toggle sort order or set default sort order (DESC)
+				currentSort["column"] = header;
 				
-				
-				
-	            tbody.selectAll("tr").sort(function(a, b) {
-					if (a[header] == b[header]) // break ties by sorting by country name
-					{
-						return smartSort(a["name"], b["name"]) * sortOrder; 
-					} else {
-						return smartSort(a[header], b[header]) * sortOrder;	
-					}
-	            });
+				return sortColumns();
 	          });
 	
 	        var rows = tbody.selectAll("tr.row")
@@ -200,6 +205,8 @@ ASK TF:
 		          .enter()
 		          .append("td") 
 		          .text(function(d) { return d; })
+				  
+			sortColumns();
 		  }
 		  
 		  d3.selectAll("input").on("change", function() { updateTable(); });
