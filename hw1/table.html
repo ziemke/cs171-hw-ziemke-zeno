@@ -4,26 +4,42 @@
   <head>
   	<style type="text/css">
 	
-	
  	.row:nth-child(odd) {
   		background-color: #CCCCCC;
 	}
 	
+	th {
+		font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+		cursor: default;
+	}
+	
+	caption {
+		font-weight: bold;
+		border: 1px solid gray;
+		border-bottom: none;
+		padding: 4px;
+	}
+	
+	table {
+	   border-collapse: collapse;
+	   margin-top: 25px;
+	}
+	
+	table, th, td {
+	    border: 1px solid gray;
+	}
+	
+	tbody>tr> td:nth-child(-n+2) {
+		text-align: center;
+	}
+	
+	tbody>tr> td:nth-child(n+3) {
+		text-align: right;
+	}
 	
 	</style>
   </head>
   <body>
-	  <pre>
-TODO: 
-- add comas
-- jumping headings
-- put some comments
-ASK TF:
-- Question 2 Unklarheit
-- currency/unit gdp (different from gif?)
-- sort order
-</pre> 
-	
 	<div>
 		<label>Time Update: <span id="year_min"></span><input type="range" name="points" min="1995" max="2012" step="1" value="0" id="slider-time" oninput=";"><span id="year_max"></span></label>
 	</div>
