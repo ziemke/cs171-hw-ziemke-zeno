@@ -15,17 +15,6 @@
 </head>
 <body>
 	<pre>
-TODO:
-- use ordinal scale for y axis
-- flat_results 
-- sort DESC/ASC toggle
-- effect issues
-- data.map(function(d){
-	return {country:d.key,year:d.values[0].key,gdp:d.values[0].values.gdp,life_expectancy:d.values[0].values.life_expectancy,population:d.values[0].values.population};})
-
-ASK:
-- Scaling required?
-- effect issue
 	</pre>
 	<div>
 		<label>Time: <span id="year_min"></span><input type="range" name="points" min="1995" max="2012" step="1" value="0" id="slider-time"><span id="year_max"></span></label>
@@ -241,10 +230,10 @@ ASK:
 					.attr("height", bar_height)
                     .attr("x", 3)
                     .attr("y", 0)
-					.style("fill-opacity", 0)
+					/*.style("fill-opacity", 0)
 					.transition()
-					.duration(1000)
-					.style("fill-opacity", 1);
+					.duration(500)
+					.style("fill-opacity", 1)*/;
 		
 				labels = groups.append("text")
 					.attr("x", 0)
@@ -336,9 +325,9 @@ ASK:
 		  } 
 		
 		  
-		  d3.selectAll("input").on("change", function() { updateBars(1, 1000); });
-		  d3.selectAll("input#slider-time").on("change","").on("input", function() { updateBars(1, 0); });
-		  d3.selectAll("input[name=ColumnSelection]").on("change", function() { updateBars(1, 0); });
+		  d3.selectAll("input").on("change", function() { updateBars(1, 150); }); //default sort speed
+		  d3.selectAll("input#slider-time").on("change","").on("input", function() { updateBars(1, 0); }); //instant sort 
+		  d3.selectAll("input[name=ColumnSelection]").on("change", function() { updateBars(1, 0); });//instant sort 
 		  
 		  
 		 
