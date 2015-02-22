@@ -45,16 +45,16 @@ The attribute years is an array of objects. Each object contains the gdp, life e
 Question 5.1
 -----------
 SVG allows us to flexibly define graphics in code.   
-+ These graphics can  be dynamically modified using js, which makes it easier to create animations.  
-+ We can create complex graphics that would not be possible to create with CSS/HTML. We could implement them using prerendered graphics. Which is often is inflexible.  
-- if we mainly want to display content (for example text), SVG is not as suitable, since its difficult to separate content (i.e. text) from the design. 
-Example: If we wanted to visualize data in pie charts. We could do this with HTML/CSS using prerendered images for each pie charts. This would be inflexible, load slowly and very difficule to make interactive. SVG is better suited in this case.
++ These graphics can  be dynamically modified using js, which makes it easier to create animations. For example by changing sizes or position when a user presses a button.  
++ We can create complex graphics with SVG that we would not be possible to create with CSS/HTML or only possible to implement using prerendered graphics, which is often is inflexible. For example in terms of shapes, HTML only offers block elements like divs, ps, to which we can apply border, rounded borders, gradients, etc. In contrast SVG also offers ellipse, paths, polygons, etc.   
+Example: If we wanted to visualize data in pie charts. We could do this with HTML/CSS using prerendered images for each pie charts. This would be inflexible, load slowly and very difficule to make interactive. SVG is better suited in this case. 
 
 
-HTML/CSS  
-+ Using HTML/CSS allows us to clearly separate content from design. (-> accessibility, people who have disabilities can use special readers that modify the CSS style to make the content easier readable)  
+HTML/CSS    
 + HTML comes with many preimplemented widgets that would need to be manually designed with SVG.  
-Example: For this homework, we use html radio buttons, checkboxes etc. to save time. It would also be possible to implement them in SVG.
+Example: For this homework, we use html radio buttons, checkboxes etc. to save time. It would also be possible to implement them in SVG.  
++ If we want to create a website that focues on showing a lot of text content, it is often faster and easier to use html elements like divs in combination with CSS to set up the layout of the website. For example SVG you are expected to set the x,y coordinates for every element. In HTML you can simply define multiple <div>s,  <p>s, <img>s, etc. that will be stacked on top of each other by default.  
+	+ not using SVG provides better backwards compatibility, since many old browsers which are sometimes still used on enteprise computers, do not support svg yet. (for example Internet Explorer before version 8)
 
 
 
@@ -78,7 +78,7 @@ Question 7.5
 -----------
 a) two quantitative attributes are measurements of magnitude that can be arithmeticaly compared. For example I can compare 5 inch to 6 inch and see that the difference is 1 inch.  
 
-b)for  two categorial attributes we can only distinguish if they belong to the same group or to different groups. An external ordering can be imposed through auxiliary information, but the ordering is not implicit in the attributes itself.
+b) for  two categorial attributes we can only distinguish if they belong to the same group or to different groups. An external ordering can be imposed through auxiliary information, but the ordering is not implicit in the attributes itself.
 
 c) for two ordinal attributes, there is a order defined for the attributes, but we can not perform real arithmetic operations with them.
 
@@ -94,4 +94,5 @@ Position (for example on a scale) and size. All others would in the best case be
 Animation Reasoning
 -----------
 For sorting I choose to implemente an animation that slides the bars into their new positions. This way the user can observe, how the different countries switch places as he changes the sorting.
+
 For filtering/aggreating/switching the display value I choose to implement fade-in transaction. I want to make clear to the user that the view has changed and that he is moving to a new "page". I choose to not implement a more fancy transition with for example moving bars, since I believe  many of these look pretty, but do not make the interface more user friendly. In fact it introduces short delays for the user while using the application.
