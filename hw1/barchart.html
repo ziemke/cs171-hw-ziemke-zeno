@@ -65,6 +65,9 @@
 	var groups = [];
 	var bars = [];
 	var labels  = [];
+	
+	var min = 0;
+	var max = 0;
  
 	d3.json("data/countries_1995_2012.json", function(data) {
 		var continentSelection = [];	
@@ -88,9 +91,7 @@
 				d3.select("span[id=year_max]").text(range["maximum"]);
 				d3.select("input[id=slider-time]")
 				  .attr("min", range["minimum"])
-				  .attr("max", range["maximum"]);
-					
-					
+				  .attr("max", range["maximum"]);			
 			  }
 			  
 			  
@@ -118,7 +119,7 @@
 		}
 		
 		//mode: 0=create, 1=update 
-		function updateBars(mode, transitionSpeed) {
+		function updateBars(mode, transitionAnimation) {
 			continentSelection = [];
 	  
 		    d3.selectAll("input").each(function(d) { 
@@ -138,15 +139,15 @@
 					"name": leaves.length, "gdp": d3.sum(leaves, function(d) {return d.gdp;}), "population": d3.sum(leaves, function(d) {return d.population;}), "name": leaves[0]["continent"], "continent": leaves[0]["continent"], "life_expectancy": d3.mean(leaves, function(d) {return d.life_expectancy;}),  "year": d3.mean(leaves, function(d) {return d.year;}) }; })
 				.entries(filteredData);	
 				
-				drawBars(nested_data.map(function(i){return i["values"];}), mode, transitionSpeed);
+				drawBars(nested_data.map(function(i){return i["values"];}), mode, transitionAnimation);
 			} else {
-				drawBars(filteredData, mode, transitionSpeed);
+				drawBars(filteredData, mode, transitionAnimation);
 			}
 		}
 			  
 		  
 		//mode: 0=create, 1=update 
-		function drawBars(data_draw, mode, transitionSpeed) {
+		function drawBars(data_draw, mode, transitionAnimation) {
 	 		
 			var selectedColumn = "";
 			
@@ -158,8 +159,8 @@
 				selectedColumn = "population";		
 			}
 			
-			var max = d3.max(data_draw, function(d) { return d[selectedColumn]; } );
-	        var min = 0;
+			max = d3.max(data_draw, function(d) { return d[selectedColumn]; } );
+	        min = 0;
 	
 	        xScale.domain([min, max]);
 	        //yScale.domain([min, data_draw.length]);
@@ -167,7 +168,7 @@
 			
 			bar_height = 10 //height / (data_draw.length + 5);
 			
-	        groups = g
+			groups = g
 					    .selectAll("g")
 	                    .data(data_draw);
 						
@@ -215,18 +216,18 @@
 				  
 				
 			} else {
+				
+				groups.exit()
+					.remove();
+					
 				newGroups= groups
 	                  .enter()
 					  .append("g")
 					  
-				groups.exit()
-				//.transition()
-					//.duration(1000)
-					//.style("fill-opacity", 0)
-					.remove();
+					  
 				
 				//create new elements	  
-				newGroups.append("rect")
+				bars = newGroups.append("rect")
 					.attr("height", bar_height)
                     .attr("x", 3)
                     .attr("y", 0)
@@ -275,10 +276,30 @@
 					  default: return d[selectedColumn];
 				  }
 			  });	
-			  
+			    
+			  sortBars(0);				
+			
+		 	  }
+		  
+		  
+		  //Animate transition if we are not only sorting the current view (sortingAnimation=0)
+		  if (transitionAnimation > 0) {
+		   		groups.style("fill-opacity", 0)
+					.transition()
+					.duration(300)
+					.style("fill-opacity", 1);
 					
-			}
-						
+				groups.
+				select("rect").style("fill-opacity", 0)
+					.transition()
+					.duration(300)
+					.style("fill-opacity", 1);
+					
+		   }
+		   
+ 		}
+		
+		function sortBars(sortingAnimation) {
 			// Sort Elements		 
 			var selectedSortColumn = "";
 				
@@ -302,18 +323,16 @@
 				
 			})
 		
-			if (transitionSpeed > 0) {
+			if (sortingAnimation > 0) {
 				groupsToSort =	groupsToSort
 					.transition()
-					//.delay(1000)
-					.duration(transitionSpeed)
+					.duration(500)
 			}
 			
 			groupsToSort.attr("transform",  function(d, i) {
-			  return "translate("+xScale(min)+","+((bar_height + 5) * i)+")";
-		  });	  
-					  
- 		}
+				return "translate("+xScale(min)+","+((bar_height + 5) * i)+")";
+			 });
+		}
 		
 		 //Sorts columns with strings lexicographic (A-Z) and columns with numbers numerically (Big to Small)
 		  function smartSort(a, b) {
@@ -325,14 +344,10 @@
 		  } 
 		
 		  
-		  d3.selectAll("input").on("change", function() { updateBars(1, 150); }); //default sort speed
-		  d3.selectAll("input#slider-time").on("change","").on("input", function() { updateBars(1, 0); }); //instant sort 
-		  d3.selectAll("input[name=ColumnSelection]").on("change", function() { updateBars(1, 0); });//instant sort 
+	      d3.selectAll("input").on("change", function() { updateBars(1, 1); }); //default transition animation
+	      d3.selectAll("input[name=Sorting]").on("change", function() { sortBars(1); });  // sort animination, no transition animation
+		  d3.selectAll("input#slider-time").on("change","").on("input", function() { updateBars(1, 0); }); //no transition animation
 		  
-		  
-		 
-			  
-		
 		drawBars(getFilteredData(data), 0, 0);
 		updateYearsRange(data); 
     });

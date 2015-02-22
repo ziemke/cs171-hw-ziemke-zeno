@@ -93,3 +93,5 @@ Position (for example on a scale) and size. All others would in the best case be
 
 Animation Reasoning
 -----------
+For sorting I choose to implemente an animation that slides the bars into their new positions. This way the user can observe, how the different countries switch places as he changes the sorting.
+For filtering/aggreating/switching the display value I choose to implement fade-in transaction. I want to make clear to the user that the view has changed and that he is moving to a new "page". I choose to not implement a more fancy transition with for example moving bars, since I believe  many of these look pretty, but do not make the interface more user friendly. In fact it introduces short delays for the user while using the application.
