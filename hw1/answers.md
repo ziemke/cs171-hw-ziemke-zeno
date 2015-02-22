@@ -53,7 +53,7 @@ Example: If we wanted to visualize data in pie charts. We could do this with HTM
 HTML/CSS    
 + HTML comes with many preimplemented widgets that would need to be manually designed with SVG.  
 Example: For this homework, we use html radio buttons, checkboxes etc. to save time. It would also be possible to implement them in SVG.  
-+ If we want to create a website that focues on showing a lot of text content, it is often faster and easier to use html elements like divs in combination with CSS to set up the layout of the website. For example SVG you are expected to set the x,y coordinates for every element. In HTML you can simply define multiple <div>s,  <p>s, <img>s, etc. that will be stacked on top of each other by default.  
++ If we want to create a website that focues on showing a lot of text content, it is often faster and easier to use html elements like divs in combination with CSS to set up the layout of the website. For example SVG you are expected to set the x,y coordinates for every element. In HTML you can simply define multiple divs,  ps, imgs, etc. that will be stacked on top of each other by default.  
 	+ not using SVG provides better backwards compatibility, since many old browsers which are sometimes still used on enteprise computers, do not support svg yet. (for example Internet Explorer before version 8)
 
 
