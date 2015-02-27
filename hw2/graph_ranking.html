@@ -9,13 +9,10 @@
       font-family: "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
     }
     circle {
-      stroke: #fff;
+	  stroke: #000;
+	  fill: #fff;
       stroke-width: 1;
-    }
-    .link {
-      stroke: #999;
-      stroke-opacity: .6;
-    }
+  }
   </style>
 </head>
 <body>
@@ -24,6 +21,7 @@
 	  - circle strokes
 	  - ask about sorting best practice
 	  - ask if necessary to implement asc/desc
+	  - move controls to the top
   </pre>
   <script type="text/javascript">
 
@@ -129,9 +127,7 @@
 	
 	    node
 	        .attr("class", "node")
-	        .attr("r", nodeRadius)
-			.attr("stroke","red")
-			.attr("stroke-width","2")
+	        .attr("r", nodeRadius);
 
 	        
 	    node
