@@ -17,6 +17,12 @@
     fill: black;
   }
 
+  .text {
+    color: #000;
+    font-family: "Times New Roman", Georgia, Serif;
+    font-size: 11px;
+  }
+
 </style>
 <body>
 <script src="http://d3js.org/d3.v3.min.js"></script>
@@ -256,6 +262,12 @@ var node = svg.selectAll(".node")
 
 node.append("circle")
     .attr("r", 5)
+
+node.append("text")
+  .text(function (d) { return d.name;})
+  .attr("x", 7)
+  .attr("y", 3)
+  .attr("class", "text");
 
 force_layout();
 
