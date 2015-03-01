@@ -20,7 +20,7 @@
   .text {
     color: #000;
     font-family: "Times New Roman", Georgia, Serif;
-    font-size: 11px;
+    font-size: 10px;
   }
 
 </style>
@@ -28,7 +28,9 @@
 <script src="http://d3js.org/d3.v3.min.js"></script>
   <form>
   Layout:
-    <label><input type="radio" name="layout" value="force" checked> Force</label>
+    <label><input type="radio" name="layout" value="force1" checked> Force 1</label>
+    <label><input type="radio" name="layout" value="force2"> Force 2</label>
+    <label><input type="radio" name="layout" value="force3"> Force 3</label>
     <label><input type="radio" name="layout" value="random" > Random</label>
     <label><input type="radio" name="layout" value="circular"> Circular</label>  
     <label><input type="radio" name="layout" value="line"> Line</label>
@@ -53,8 +55,8 @@
 
 d3.json("data/countries_1995_2012.json", function(data) {
 
-var margin = {top: 50, bottom: 10, left: 300, right: 40};
-var width = 900 - margin.left - margin.right;
+var margin = {top: 10, bottom: 10, left: 10, right: 60};
+var width = 1100 - margin.left - margin.right;
 var height = 900 - margin.top - margin.bottom;
 
 var svg = d3.select("body").append("svg")
@@ -135,8 +137,77 @@ function force_layout() {
 
  force.nodes(graph.nodes)
       .links(graph.links)
+      .on("tick", tick)
       .start();
 }
+
+
+function force_layout_grouped() {
+  var continents = ["Africa", "Americas", "Asia", "Europe", "Oceania"]; // better performance than implementing some map/foreachs to get the continents automatically
+  var groupScale = d3.scale.ordinal()
+    .domain(continents)
+    .rangePoints([-4,4], 0);
+ 
+ force.on("tick", function(e){
+   var k = 6 * e.alpha;
+
+  graph.nodes.forEach(function(o, i) {
+    o.x += groupScale(o.continent) * k;
+    });
+
+    graph_update(0);
+ });
+
+ force.nodes(graph.nodes)
+      .links(graph.links)
+      .start();
+}
+
+
+function force_layout_grouped_circular() {
+  var continents = ["Africa", "Americas", "Asia", "Europe", "Oceania"]; // better performance than implementing some map/foreachs to get the continents automatically
+  var groupScale = d3.scale.ordinal()
+    .domain(continents)
+    .rangePoints([-4,4], 0);
+
+   var r = Math.min(height, width)/2;
+
+  var arc = d3.svg.arc()
+          .outerRadius(r);
+
+  var pie = d3.layout.pie()
+          .value(function(d, i) { 
+            return 1;  // We want an equal pie share/slice for each point
+          });
+
+  var groups = {};
+  pie(continents).forEach(function(d) {
+    d.innerRadius = 0;
+    d.outerRadius = r;
+
+    groups[d.data] = {
+             "x": arc.centroid(d)[0],
+             "y":arc.centroid(d)[1]
+            };
+  })
+ 
+ 
+ force.on("tick", function(e){
+   var k = 6 * e.alpha;
+
+  graph.nodes.forEach(function(o, i) {
+    o.x += groups[o.continent].x / 100 * k;
+    o.y += groups[o.continent].y / 100 * k;
+    });
+
+    graph_update(0);
+ });
+
+ force.nodes(graph.nodes)
+      .links(graph.links)
+      .start();
+}
+
 
 function line_layout() {
 
@@ -225,7 +296,9 @@ function graph_update(duration) {
       });
 }
 
-d3.select("input[value=\"force\"]").on("click", force_layout);
+d3.select("input[value=\"force1\"]").on("click", force_layout);
+d3.select("input[value=\"force2\"]").on("click", force_layout_grouped);
+d3.select("input[value=\"force3\"]").on("click", force_layout_grouped_circular);
 d3.select("input[value=\"random\"]").on("click", random_layout);
 d3.select("input[value=\"line\"]").on("click", line_layout);
 d3.select("input[value=\"line_cat\"]").on("click", line_cat_layout);
