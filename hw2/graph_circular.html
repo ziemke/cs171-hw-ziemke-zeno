@@ -38,14 +38,7 @@
     <label><input type="radio" name="size" value="nosize" checked> None</label>
     <label><input type="radio" name="size" value="size_cat" > Category</label>
   </form>
-  <form>
-  Sort:
-    <label><input type="radio" name="sort_by" value="sort_gdp" checked> GDP</label>
-    <label><input type="radio" name="sort_by" value="sort_population" > Population</label>
-  </form>
 <script>
-
-d3.json("data/countries_1995_2012.json", function(data) {
 
 var margin = {top: 50, bottom: 10, left: 300, right: 40};
 var width = 900 - margin.left - margin.right;
@@ -63,42 +56,19 @@ var nb_nodes = 120, nb_cat = 10;
 
 var node_scale = d3.scale.linear().domain([0, nb_cat]).range([5, 50])
 
-var selected_year = 2012;
+graph.nodes = d3.range(nb_nodes).map(function() {  
+  return { 
+    cat: Math.floor(nb_cat*Math.random())
+  }; 
+})
 
-var sort_by = "gdp";
-
-var accessor_selected_year_data = function(d) {
-  year_data = [];
-  d.years.forEach(function(m, i) {
-    if (m.year == selected_year)
-      year_data = m;
-  });
-
-  return year_data;
-}
-
-var accessor_population = function(d) {
-  return accessor_selected_year_data(d).population;
-}
-
-var accessor_gdp = function(d) {
-  return accessor_selected_year_data(d).gdp;
-}
-
-
-
-graph.nodes = data;
-/*
 graph.nodes.forEach(function(d, i) {
-  d.years.forEach(function(y, j) {
-    if(y.year == selected_year) {
-      y.top_partners.forEach(function(p, k) {
-        graph.links.push({"source": d.country_id, "target": p.country_id, "total_export": p.total_export});  
-      });
-      
-    }
+  graph.nodes.forEach(function(e, j) {
+    if(Math.random()>.99 && i!=j)
+      graph.links.push({"source": i, "target": j})
+
   })
-})*/
+})
 
 // Generate the force layout
 var force = d3.layout.force()
@@ -164,12 +134,7 @@ function circular_layout() {
           .outerRadius(r);
 
   var pie = d3.layout.pie()
-          .sort(function(a, b) { 
-          if (sort_by == "population")
-            return accessor_population(a) - accessor_population(b);
-          else
-            return accessor_gdp(a) - accessor_gdp(b);
-          }) // Sorting
+          .sort(function(a, b) { return a.cat - b.cat;}) // Sorting by categories
           .value(function(d, i) { 
             return 1;  // We want an equal pie share/slice for each point
           });
@@ -237,12 +202,6 @@ d3.select("input[value=\"nosize\"]").on("click", function() {
 
 d3.select("input[value=\"size_cat\"]").on("click", category_size);
 
-d3.select("input[value=\"sort_gdp\"]").on("click", function(){ sort_by = "gdp"; circular_layout(); });
-d3.select("input[value=\"sort_population\"]").on("click", function(){ 
-sort_by = "population"; 
-circular_layout(); });
-
-
 var link = svg.selectAll(".link")
               .data(graph.links);
 
@@ -259,7 +218,6 @@ node.append("circle")
 
 force_layout();
 
-});
 </script>
 </body>
 </html>
