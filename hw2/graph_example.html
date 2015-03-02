@@ -32,21 +32,21 @@
     <label><input type="radio" name="layout" value="force2"> Force 2</label>
     <label><input type="radio" name="layout" value="force3"> Force 3</label>
     <label><input type="radio" name="layout" value="random" > Random</label>
-    <label><input type="radio" name="layout" value="circular"> Circular</label>  
+    <label><input type="radio" name="layout" value="circular1"> Circular 1</label>  
+    <label><input type="radio" name="layout" value="circular2"> Circular 2</label>  
     <label><input type="radio" name="layout" value="line"> Line</label>
-    <label><input type="radio" name="layout" value="line_cat"> Line by Category</label>
-  </form>
+    </form>
   <form>
   Color:
     <label><input type="radio" name="color" value="nocolor" checked> None</label>
     <label><input type="radio" name="color" value="color_cat" > Category</label>
   </form>
   <form>
-  Size:
+  <!--Size:
     <label><input type="radio" name="size" value="nosize" checked> None</label>
     <label><input type="radio" name="size" value="size_cat" > Category</label>
   </form>
-  <form>
+  <form>-->
   Sort:
     <label><input type="radio" name="sort_by" value="sort_gdp" checked> GDP</label>
     <label><input type="radio" name="sort_by" value="sort_population" > Population</label>
@@ -67,9 +67,10 @@ var fill = d3.scale.category10();
 
 var graph = {nodes: [], links: []};
 
-var nb_nodes = 120, nb_cat = 10;
-
-var node_scale = d3.scale.linear().domain([0, nb_cat]).range([5, 50])
+var continents = ["Africa", "Americas", "Asia", "Europe", "Oceania"]; // better performance than implementing some map/foreachs to get the continents automatically
+var groupScale = d3.scale.ordinal()
+  .domain(continents)
+  .rangePoints([-4,4], 0);
 
 var selected_year = 2012;
 
@@ -143,11 +144,7 @@ function force_layout() {
 
 
 function force_layout_grouped() {
-  var continents = ["Africa", "Americas", "Asia", "Europe", "Oceania"]; // better performance than implementing some map/foreachs to get the continents automatically
-  var groupScale = d3.scale.ordinal()
-    .domain(continents)
-    .rangePoints([-4,4], 0);
- 
+
  force.on("tick", function(e){
    var k = 6 * e.alpha;
 
@@ -165,10 +162,6 @@ function force_layout_grouped() {
 
 
 function force_layout_grouped_circular() {
-  var continents = ["Africa", "Americas", "Asia", "Europe", "Oceania"]; // better performance than implementing some map/foreachs to get the continents automatically
-  var groupScale = d3.scale.ordinal()
-    .domain(continents)
-    .rangePoints([-4,4], 0);
 
    var r = Math.min(height, width)/2;
 
@@ -220,17 +213,6 @@ function line_layout() {
   graph_update(500);
 }
 
-function line_cat_layout() {
-
-  force.stop();
-
-  graph.nodes.forEach(function(d, i) {
-    d.y = height/2 + d.cat*20;
-  })
-
-  graph_update(500);
-}
-
 function circular_layout() {
 
   force.stop();
@@ -266,6 +248,67 @@ function circular_layout() {
   graph_update(500);
 }
 
+
+function circular_layout_grouped() {
+  force.stop();
+  var r = Math.min(height, width)/5;
+
+  var arc = d3.svg.arc()
+          .outerRadius(r);
+
+  var pie_groups = d3.layout.pie()
+          .value(function(d, i) { 
+            return 1;  // We want an equal pie share/slice for each point
+          });
+
+  var groups = {};
+  pie_groups(continents).forEach(function(d) {
+    d.innerRadius = 0;
+    d.outerRadius = r;
+
+    groups[d.data] = {
+             "x": arc.centroid(d)[0],
+             "y":arc.centroid(d)[1]
+            };
+  })
+ 
+  pie_nodes = d3.layout.pie()
+          .sort(function(a, b) { 
+          if (sort_by == "population")
+            return accessor_population(a) - accessor_population(b);
+          else
+            return accessor_gdp(a) - accessor_gdp(b);
+          }) // Sorting
+          .value(function(d, i) { 
+            return 1;  // We want an equal pie share/slice for each point
+          });
+
+  nested_nodes = d3.nest()
+  				.key(function(d) {  return d.continent; })
+  				.rollup(function(leaves) { return pie_nodes(leaves); })
+				.entries(graph.nodes);
+
+  graph.nodes = [];
+  
+  nested_nodes.forEach(function(g) {
+    return g.values.forEach(function(d, i) {
+        // Needed to caclulate the centroid
+        d.innerRadius = 0;
+        d.outerRadius = r;
+
+        // Building the data object we are going to return
+        d.data.x = arc.centroid(d)[0]+groups[d.data.continent].x*3 + 400;
+        d.data.y = arc.centroid(d)[1]+groups[d.data.continent].y*3 + 400;
+
+        graph.nodes.push(d.data);
+      });
+    });
+
+  graph_update(500);
+ 
+}
+
+
 function category_color() {
 
   d3.selectAll("circle").transition().duration(500)
@@ -274,13 +317,13 @@ function category_color() {
                         });
 }
 
-function category_size() {
+/*function category_size() {
 
   d3.selectAll("circle").transition().duration(500)
                         .attr("r", function(d) { 
                           return Math.sqrt(node_scale(d.cat)); 
                         });
-}
+}*/
 
 function graph_update(duration) {
 
@@ -301,8 +344,8 @@ d3.select("input[value=\"force2\"]").on("click", force_layout_grouped);
 d3.select("input[value=\"force3\"]").on("click", force_layout_grouped_circular);
 d3.select("input[value=\"random\"]").on("click", random_layout);
 d3.select("input[value=\"line\"]").on("click", line_layout);
-d3.select("input[value=\"line_cat\"]").on("click", line_cat_layout);
-d3.select("input[value=\"circular\"]").on("click", circular_layout);
+d3.select("input[value=\"circular1\"]").on("click", circular_layout);
+d3.select("input[value=\"circular2\"]").on("click", circular_layout_grouped);
 
 d3.select("input[value=\"nocolor\"]").on("click", function() {
   d3.selectAll("circle").transition().duration(500).style("fill", "#66CC66");
@@ -314,7 +357,7 @@ d3.select("input[value=\"nosize\"]").on("click", function() {
   d3.selectAll("circle").transition().duration(500).attr("r", 5);
 })
 
-d3.select("input[value=\"size_cat\"]").on("click", category_size);
+//d3.select("input[value=\"size_cat\"]").on("click", category_size);
 
 d3.select("input[value=\"sort_gdp\"]").on("click", function(){ sort_by = "gdp"; circular_layout(); });
 d3.select("input[value=\"sort_population\"]").on("click", function(){ 
