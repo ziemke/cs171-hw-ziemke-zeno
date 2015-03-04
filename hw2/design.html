@@ -42,11 +42,14 @@
 <body>
 <script src="http://d3js.org/d3.v3.min.js"></script>
 <pre>
-	- Links in Force 1,2,3 crumble everything and makes transitions slow
-- lines rendered infront of text in circular layout
 - sort GDP/Pop in grouped layout
-- only show short gdp/pop when 
-- some links not drawn???
+- necessary to sort in linear and scatterplot view?
+- add more sorting
+- show gdp/life_expectancy, etc. value
+- show title of group inside of circles
+- link transition in the beginning does not work
+- show labels so that they dont overlap
+- adjust circle size relative to number of items
 </pre>
   <form>
   Layout:
@@ -57,20 +60,31 @@
     <label><input type="radio" name="layout" value="circular2"> Circular 2</label>  
     <label><input type="radio" name="layout" value="line"> Line</label>
     </form>
+    <form>
+  Group by:
+    <label><input type="radio" name="group_by" value="continent"> Continent</label>
+    <label><input type="radio" name="group_by" value="population" > Population</label>
+    <label><input type="radio" name="group_by" value="gdp" checked> GDP</label>
+    <label><input type="radio" name="group_by" value="life_expectancy" > Life Expectancy</label>
+ </form>
+  <form>
   <form>
   Color:
     <label><input type="radio" name="color" value="nocolor" checked> None</label>
     <label><input type="radio" name="color" value="color_cat" > Category</label>
   </form>
   <form>
-  <!--Size:
+  Size:
     <label><input type="radio" name="size" value="nosize" checked> None</label>
     <label><input type="radio" name="size" value="size_cat" > Category</label>
+    <label><input type="radio" name="size" value="size_cat" > Category</label>
+    <label><input type="radio" name="size" value="size_cat" > Category</label>
+    <label><input type="radio" name="size" value="size_cat" > Category</label>
   </form>
-  <form>-->
+  <form>
   Sort:
-    <label><input type="radio" name="sort_by" value="sort_gdp" checked> GDP</label>
-    <label><input type="radio" name="sort_by" value="sort_population" > Population</label>
+    <label><input type="radio" name="sort_by" value="gdp" checked> GDP</label>
+    <label><input type="radio" name="sort_by" value="population" > Population</label>
   </form>
 <script>
 
@@ -93,9 +107,11 @@ var groupScale = d3.scale.ordinal()
   .domain(continents)
   .rangePoints([-4,4], 0);
 
-var selected_year = 1995;
+var selected_year = 2012;
 
 var sort_by = "gdp";
+
+var group_by = "gdp";
 
 var accessor_selected_year_data = function(d) {
   year_data = [];
@@ -115,9 +131,41 @@ var accessor_gdp = function(d) {
   return accessor_selected_year_data(d).gdp;
 }
 
+var accessor_life_expectancy = function(d) {
+  return accessor_selected_year_data(d).life_expectancy;
+}
 
 
-graph.nodes = data;
+
+// line drawing setup
+
+var diameter = 960,
+    radius = diameter / 2,
+    innerRadius = radius - 120;
+
+var cluster = d3.layout.cluster()
+    .size([360, innerRadius])
+    .sort(null)
+    .value(function(d) { return d.size; });
+
+var bundle = d3.layout.bundle();
+
+var line = d3.svg.line.radial()
+    .interpolate("bundle")
+    .tension(.85)
+    .radius(function(d) { return d.y; })
+    .angle(function(d) { return d.x / 180 * Math.PI; });
+
+
+
+
+var tree = data[0];
+data.shift();
+tree.children = data;
+tree.children.forEach(function(c) { 
+c.parent = tree; });
+
+graph.nodes = cluster.nodes(tree);
 
 graph.nodes.forEach(function(d, i) {
   d.years.forEach(function(y, j) {
@@ -131,17 +179,17 @@ graph.nodes.forEach(function(d, i) {
         if (target_index >= 0) { 
 
           graph.links.push(
-            { "source": i,
-              "target": target_index,
+            { "source": graph.nodes[i],
+              "target": graph.nodes[target_index],
               "value": p.total_export
              }); 
         }
       });
-
       
     }
   })
 })
+
 
 var lineWidthScale = d3.scale.log()
 .domain(d3.extent(graph.links, function(l) { return l.value; }))
@@ -164,7 +212,7 @@ function tick(d) {
 function force_layout() {
 
  force.nodes(graph.nodes)
-      .links(graph.links)
+  //    .links(graph.links)
       .on("tick", tick)
       .start();
 }
@@ -183,7 +231,7 @@ function force_layout_grouped() {
  });
 
  force.nodes(graph.nodes)
-      .links(graph.links)
+      //.links(graph.links)
       .start();
 }
 
@@ -201,7 +249,11 @@ function force_layout_grouped_circular() {
           });
 
   var groups = {};
-  pie(continents).forEach(function(d) {
+	
+  var cats = (group_by == "continent") ? continents : ["Small " + group_by, "Middle " + group_by, "Large " + group_by]; 
+  	
+
+  pie(cats).forEach(function(d) {
     d.innerRadius = 0;
     d.outerRadius = r;
 
@@ -216,15 +268,20 @@ function force_layout_grouped_circular() {
    var k = 6 * e.alpha;
 
   graph.nodes.forEach(function(o, i) {
-    o.x += groups[o.continent].x / 100 * k;
-    o.y += groups[o.continent].y / 100 * k;
+  	if (group_by == "continent") {
+		o.x += groups[o.continent].x / 100 * k;
+		o.y += groups[o.continent].y / 100 * k;
+  	} else {
+		o.x += groups[o[group_by]].x / 100 * k;
+		o.y += groups[o[group_by]].y / 100 * k;
+    }
     });
 
     graph_update(0);
  });
 
  force.nodes(graph.nodes)
-      .links(graph.links)
+ //     .links(graph.links)
       .start();
 }
 
@@ -282,13 +339,17 @@ function circular_layout_grouped() {
   var arc = d3.svg.arc()
           .outerRadius(r);
 
+  var cats = (group_by == "continent") ? continents : ["Small " + group_by, "Middle " + group_by, "Large " + group_by]; 
+ 
+
   var pie_groups = d3.layout.pie()
           .value(function(d, i) { 
             return 1;  // We want an equal pie share/slice for each point
           });
 
   var groups = {};
-  pie_groups(continents).forEach(function(d) {
+
+  pie_groups(cats).forEach(function(d) {
     d.innerRadius = 0;
     d.outerRadius = r;
 
@@ -302,6 +363,8 @@ function circular_layout_grouped() {
           .sort(function(a, b) { 
           if (sort_by == "population")
             return accessor_population(a) - accessor_population(b);
+          else if (sort_by == "life_expectancy")
+          	return accessor_life_expectancy(a) - accessor_life_expectancy(b);
           else
             return accessor_gdp(a) - accessor_gdp(b);
           }) // Sorting
@@ -309,11 +372,23 @@ function circular_layout_grouped() {
             return 1;  // We want an equal pie share/slice for each point
           });
 
+  var catScale = d3.scale.quantile()
+			.domain(d3.extent(graph.nodes, function(l) {
+				 return accessor_selected_year_data(l)[group_by]; 
+			}))
+			.range(cats);
+
+  console.log(catScale.quantiles());
+
   nested_nodes = d3.nest()
-  				.key(function(d) {  return d.continent; })
+  				.key(function(d) { 
+  					if (group_by == "continent")
+  				 		return d.continent; 
+  				 	else
+  				 		return catScale(accessor_selected_year_data(d)[group_by]);
+  				 })
   				.rollup(function(leaves) { return pie_nodes(leaves); })
 				.entries(graph.nodes);
-
   graph.nodes = [];
   
   nested_nodes.forEach(function(g) {
@@ -323,8 +398,11 @@ function circular_layout_grouped() {
         d.outerRadius = r;
 
         // Building the data object we are going to return
-        d.data.x = arc.centroid(d)[0]+groups[d.data.continent].x*3 + 400;
-        d.data.y = arc.centroid(d)[1]+groups[d.data.continent].y*3 + 400;
+
+        var offset = (group_by == "continent") ? groups[d.data.continent] : groups[catScale(accessor_selected_year_data(d.data)[group_by])]
+         
+        d.data.x = arc.centroid(d)[0]+offset.x*3 + 400;
+        d.data.y = arc.centroid(d)[1]+offset.y*3 + 400;
 
         graph.nodes.push(d.data);
       });
@@ -343,13 +421,13 @@ function category_color() {
                         });
 }
 
-/*function category_size() {
+function node_size() {
 
   d3.selectAll("circle").transition().duration(500)
                         .attr("r", function(d) { 
                           return Math.sqrt(node_scale(d.cat)); 
                         });
-}*/
+}
 
 function graph_update(duration) {
 
@@ -408,12 +486,15 @@ d3.select("input[value=\"nosize\"]").on("click", function() {
   d3.selectAll("circle").transition().duration(500).attr("r", 5);
 })
 
-//d3.select("input[value=\"size_cat\"]").on("click", category_size);
+d3.select("input[value=\"size_node\"]").on("click", node_size);
 
-d3.select("input[value=\"sort_gdp\"]").on("click", function(){ sort_by = "gdp"; circular_layout(); });
-d3.select("input[value=\"sort_population\"]").on("click", function(){ 
-sort_by = "population"; 
-circular_layout(); });
+d3.selectAll("input[name=\"sort_by\"]").on("click", function(){
+	sort_by = this.value; circular_layout_grouped();
+});
+
+d3.selectAll("input[name=\"group_by\"]").on("click", function(){
+	group_by = this.value; circular_layout_grouped();
+});
 
 
 var link = svg.selectAll(".link")
@@ -421,6 +502,7 @@ var link = svg.selectAll(".link")
 
 link.enter().append("line")
     .attr("class", "link")
+   // .attr("d",line)
     .style("stroke-width", function(d) { 
     return lineWidthScale(d.value)
     ; });
@@ -441,7 +523,7 @@ node.append("text")
   .attr("y", 3)
   .attr("class", "text");
 
-force_layout();
+circular_layout_grouped();
 
 });
 </script>
