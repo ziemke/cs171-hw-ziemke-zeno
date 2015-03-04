@@ -50,6 +50,7 @@
 - link transition in the beginning does not work
 - show labels so that they dont overlap
 - adjust circle size relative to number of items
+- size color or both?
 </pre>
   <form>
   Layout:
@@ -76,10 +77,9 @@
   <form>
   Size:
     <label><input type="radio" name="size" value="nosize" checked> None</label>
-    <label><input type="radio" name="size" value="size_cat" > Category</label>
-    <label><input type="radio" name="size" value="size_cat" > Category</label>
-    <label><input type="radio" name="size" value="size_cat" > Category</label>
-    <label><input type="radio" name="size" value="size_cat" > Category</label>
+    <label><input type="radio" name="size" value="population" > Population</label>
+    <label><input type="radio" name="size" value="gdp"> GDP</label>
+    <label><input type="radio" name="size" value="life_expectancy" > Life Expectancy</label>
   </form>
   <form>
   Sort:
@@ -108,6 +108,8 @@ var groupScale = d3.scale.ordinal()
   .rangePoints([-4,4], 0);
 
 var selected_year = 2012;
+
+var node_default_size = 5;
 
 var sort_by = "gdp";
 
@@ -421,12 +423,25 @@ function category_color() {
                         });
 }
 
-function node_size() {
-
-  d3.selectAll("circle").transition().duration(500)
-                        .attr("r", function(d) { 
-                          return Math.sqrt(node_scale(d.cat)); 
-                        });
+function node_size(field) {
+	if (field == "nosize")
+  		d3.selectAll("circle").transition().duration(500).attr("r", node_default_size);
+	else {
+  		var node_scale = d3.scale.log()
+  							.domain(d3.extent(graph.nodes, function(l) {
+				 				return accessor_selected_year_data(l)[field]; 
+							}))
+  							.range([2, 7]);
+		d3.selectAll("circle").transition().duration(500) .attr("r", function(d) { 
+			var r_new = node_scale(accessor_selected_year_data(d)[field]); 
+			
+			if (!r_new) //for some reason sometimes the gdp is null in the dataset..
+				return node_scale.range[0];
+			else
+				return r_new; 
+         });
+  	}
+                       
 }
 
 function graph_update(duration) {
@@ -482,11 +497,8 @@ d3.select("input[value=\"nocolor\"]").on("click", function() {
 
 d3.select("input[value=\"color_cat\"]").on("click", category_color);
 
-d3.select("input[value=\"nosize\"]").on("click", function() {
-  d3.selectAll("circle").transition().duration(500).attr("r", 5);
-})
+d3.selectAll("input[name=\"size\"]").on("click", function() { node_size(this.value); })
 
-d3.select("input[value=\"size_node\"]").on("click", node_size);
 
 d3.selectAll("input[name=\"sort_by\"]").on("click", function(){
 	sort_by = this.value; circular_layout_grouped();
@@ -515,7 +527,7 @@ var node = svg.selectAll(".node")
 		      .on("mouseout", mouseouted);
 
 node.append("circle")
-    .attr("r", 5)
+    .attr("r", node_default_size)
 
 node.append("text")
   .text(function (d) { return d.name;})
