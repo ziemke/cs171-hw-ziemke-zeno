@@ -83,8 +83,9 @@
   </form>
   <form>
   Sort:
-    <label><input type="radio" name="sort_by" value="gdp" checked> GDP</label>
     <label><input type="radio" name="sort_by" value="population" > Population</label>
+    <label><input type="radio" name="sort_by" value="gdp"> GDP</label>
+    <label><input type="radio" name="sort_by" value="life_expectancy" > Life Expectancy</label>
   </form>
 <script>
 
@@ -435,8 +436,10 @@ function node_size(field) {
 		d3.selectAll("circle").transition().duration(500) .attr("r", function(d) { 
 			var r_new = node_scale(accessor_selected_year_data(d)[field]); 
 			
-			if (!r_new) //for some reason sometimes the gdp is null in the dataset..
-				return node_scale.range[0];
+			if (!r_new)  {//for some reason sometimes the gdp is null in the dataset..
+				return node_scale.range[0];	
+				console.log(d);	
+			}
 			else
 				return r_new; 
          });
