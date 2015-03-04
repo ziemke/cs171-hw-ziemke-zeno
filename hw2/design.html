@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Design Studio Implementation</title>
+	<style>
+	.link {
+		stroke: steelblue;
+		/*stroke-width: .8px;*/
+		opacity: 0.6;
+		fill: none;
+	}
+	
+	.node {
+		fill: white;
+		stroke: #000;
+		stroke-width: .9px;
+	}
+	
+	.node:hover {
+	fill: black;
+	}
+	
+	.text {
+		color: #000;
+		font-family: "Times New Roman", Georgia, Serif;
+		font-size: 10px;
+	}
+	
+	.node--hidden {
+		opacity: 0.1;
+	}
+	
+	.node--highlight {
+		opacity: 1;
+	}
+	
+	.link--highlight {
+	 	opacity: 1;
+		stroke: #000;
+	}
+
+</style>
+<body>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<pre>
+	- Links in Force 1,2,3 crumble everything and makes transitions slow
+- lines rendered infront of text in circular layout
+- sort GDP/Pop in grouped layout
+- only show short gdp/pop when 
+- some links not drawn???
+</pre>
+  <form>
+  Layout:
+    <label><input type="radio" name="layout" value="force1" checked> Force 1</label>
+    <label><input type="radio" name="layout" value="force2"> Force 2</label>
+    <label><input type="radio" name="layout" value="force3"> Force 3</label>
+    <label><input type="radio" name="layout" value="circular1"> Circular 1</label>  
+    <label><input type="radio" name="layout" value="circular2"> Circular 2</label>  
+    <label><input type="radio" name="layout" value="line"> Line</label>
+    </form>
+  <form>
+  Color:
+    <label><input type="radio" name="color" value="nocolor" checked> None</label>
+    <label><input type="radio" name="color" value="color_cat" > Category</label>
+  </form>
+  <form>
+  <!--Size:
+    <label><input type="radio" name="size" value="nosize" checked> None</label>
+    <label><input type="radio" name="size" value="size_cat" > Category</label>
+  </form>
+  <form>-->
+  Sort:
+    <label><input type="radio" name="sort_by" value="sort_gdp" checked> GDP</label>
+    <label><input type="radio" name="sort_by" value="sort_population" > Population</label>
+  </form>
+<script>
+
+d3.json("data/countries_1995_2012.json", function(data) {
+
+var margin = {top: 10, bottom: 10, left: 10, right: 60};
+var width = 1100 - margin.left - margin.right;
+var height = 900 - margin.top - margin.bottom;
+
+var svg = d3.select("body").append("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+var fill = d3.scale.category10();
+
+var graph = {nodes: [], links: []};
+
+var continents = ["Africa", "Americas", "Asia", "Europe", "Oceania"]; // better performance than implementing some map/foreachs to get the continents automatically
+var groupScale = d3.scale.ordinal()
+  .domain(continents)
+  .rangePoints([-4,4], 0);
+
+var selected_year = 1995;
+
+var sort_by = "gdp";
+
+var accessor_selected_year_data = function(d) {
+  year_data = [];
+  d.years.forEach(function(m, i) {
+    if (m.year == selected_year)
+      year_data = m;
+  });
+
+  return year_data;
+}
+
+var accessor_population = function(d) {
+  return accessor_selected_year_data(d).population;
+}
+
+var accessor_gdp = function(d) {
+  return accessor_selected_year_data(d).gdp;
+}
+
+
+
+graph.nodes = data;
+
+graph.nodes.forEach(function(d, i) {
+  d.years.forEach(function(y, j) {
+    if(y.year == selected_year) {
+      y.top_partners.forEach(function(p, k) {
+
+        var target_index = graph.nodes.map(function(c) {
+                        return c.country_id;
+                      }).indexOf(p.country_id);
+
+        if (target_index >= 0) { 
+
+          graph.links.push(
+            { "source": i,
+              "target": target_index,
+              "value": p.total_export
+             }); 
+        }
+      });
+
+      
+    }
+  })
+})
+
+var lineWidthScale = d3.scale.log()
+.domain(d3.extent(graph.links, function(l) { return l.value; }))
+.range([0.8, 4]);
+
+
+// Generate the force layout
+var force = d3.layout.force()
+    .size([width, height])
+    .charge(-50)
+    .linkDistance(100)
+    .on("tick", tick)
+    .on("start", function(d) {})
+    .on("end", function(d) {})
+
+function tick(d) {
+  graph_update(0);
+}
+
+function force_layout() {
+
+ force.nodes(graph.nodes)
+      .links(graph.links)
+      .on("tick", tick)
+      .start();
+}
+
+
+function force_layout_grouped() {
+
+ force.on("tick", function(e){
+   var k = 6 * e.alpha;
+
+  graph.nodes.forEach(function(o, i) {
+    o.x += groupScale(o.continent) * k;
+    });
+
+    graph_update(0);
+ });
+
+ force.nodes(graph.nodes)
+      .links(graph.links)
+      .start();
+}
+
+
+function force_layout_grouped_circular() {
+
+   var r = Math.min(height, width)/2;
+
+  var arc = d3.svg.arc()
+          .outerRadius(r);
+
+  var pie = d3.layout.pie()
+          .value(function(d, i) { 
+            return 1;  // We want an equal pie share/slice for each point
+          });
+
+  var groups = {};
+  pie(continents).forEach(function(d) {
+    d.innerRadius = 0;
+    d.outerRadius = r;
+
+    groups[d.data] = {
+             "x": arc.centroid(d)[0],
+             "y":arc.centroid(d)[1]
+            };
+  })
+ 
+ 
+ force.on("tick", function(e){
+   var k = 6 * e.alpha;
+
+  graph.nodes.forEach(function(o, i) {
+    o.x += groups[o.continent].x / 100 * k;
+    o.y += groups[o.continent].y / 100 * k;
+    });
+
+    graph_update(0);
+ });
+
+ force.nodes(graph.nodes)
+      .links(graph.links)
+      .start();
+}
+
+
+function line_layout() {
+
+  force.stop();
+
+  graph.nodes.forEach(function(d, i) {
+    d.y = height/2;
+  })
+
+  graph_update(500);
+}
+
+function circular_layout() {
+  force.stop();
+
+  var r = Math.min(height, width)/2;
+
+  var arc = d3.svg.arc()
+          .outerRadius(r);
+
+  var pie = d3.layout.pie()
+          .sort(function(a, b) { 
+          if (sort_by == "population")
+            return accessor_population(a) - accessor_population(b);
+          else
+            return accessor_gdp(a) - accessor_gdp(b);
+          }) // Sorting
+          .value(function(d, i) { 
+            return 1;  // We want an equal pie share/slice for each point
+          });
+
+  graph.nodes = pie(graph.nodes).map(function(d, i) {
+    // Needed to caclulate the centroid
+    d.innerRadius = 0;
+    d.outerRadius = r;
+
+    // Building the data object we are going to return
+    d.data.x = arc.centroid(d)[0]+width/2;
+    d.data.y = arc.centroid(d)[1]+height/2;
+
+    return d.data;
+  })
+
+  graph_update(500);
+}
+
+
+function circular_layout_grouped() {
+  force.stop();
+  var r = Math.min(height, width)/5;
+
+  var arc = d3.svg.arc()
+          .outerRadius(r);
+
+  var pie_groups = d3.layout.pie()
+          .value(function(d, i) { 
+            return 1;  // We want an equal pie share/slice for each point
+          });
+
+  var groups = {};
+  pie_groups(continents).forEach(function(d) {
+    d.innerRadius = 0;
+    d.outerRadius = r;
+
+    groups[d.data] = {
+             "x": arc.centroid(d)[0],
+             "y":arc.centroid(d)[1]
+            };
+  })
+ 
+  pie_nodes = d3.layout.pie()
+          .sort(function(a, b) { 
+          if (sort_by == "population")
+            return accessor_population(a) - accessor_population(b);
+          else
+            return accessor_gdp(a) - accessor_gdp(b);
+          }) // Sorting
+          .value(function(d, i) { 
+            return 1;  // We want an equal pie share/slice for each point
+          });
+
+  nested_nodes = d3.nest()
+  				.key(function(d) {  return d.continent; })
+  				.rollup(function(leaves) { return pie_nodes(leaves); })
+				.entries(graph.nodes);
+
+  graph.nodes = [];
+  
+  nested_nodes.forEach(function(g) {
+    return g.values.forEach(function(d, i) {
+        // Needed to caclulate the centroid
+        d.innerRadius = 0;
+        d.outerRadius = r;
+
+        // Building the data object we are going to return
+        d.data.x = arc.centroid(d)[0]+groups[d.data.continent].x*3 + 400;
+        d.data.y = arc.centroid(d)[1]+groups[d.data.continent].y*3 + 400;
+
+        graph.nodes.push(d.data);
+      });
+    });
+
+  graph_update(500);
+ 
+}
+
+
+function category_color() {
+
+  d3.selectAll("circle").transition().duration(500)
+                        .style("fill", function(d) { 
+                          return fill(d.cat); 
+                        });
+}
+
+/*function category_size() {
+
+  d3.selectAll("circle").transition().duration(500)
+                        .attr("r", function(d) { 
+                          return Math.sqrt(node_scale(d.cat)); 
+                        });
+}*/
+
+function graph_update(duration) {
+
+  link.transition().duration(duration)
+      .attr("x1", function(d) { return d.target.x; })
+      .attr("y1", function(d) { return d.target.y; })
+      .attr("x2", function(d) { return d.source.x; })
+      .attr("y2", function(d) { return d.source.y; });
+
+  node.transition().duration(duration)
+      .attr("transform", function(d) { 
+        return "translate("+d.x+","+d.y+")"; 
+      });
+}
+
+function mouseovered(d) {
+   node
+   .each(function(n) { n.partner = false; })
+
+  link
+  .classed("link--highlight", function(l) { if (l.source === d) return l.target.partner = true; })
+    .filter(function(l) { return l.source === d; })
+      .each(function() { this.parentNode.appendChild(this); });
+
+  node
+  	.classed("node--hidden", function(n) { return !(n.partner || n === d); })
+  
+   d3.selectAll(".node").each(function() { this.parentNode.appendChild(this); });
+}
+
+function mouseouted(d) {
+	link
+	.classed("link--highlight", false);
+		
+	  node
+	  .classed("node--highlight", false)
+	  .classed("node--hidden", false);
+	  
+	}
+
+
+d3.select("input[value=\"force1\"]").on("click", force_layout);
+d3.select("input[value=\"force2\"]").on("click", force_layout_grouped);
+d3.select("input[value=\"force3\"]").on("click", force_layout_grouped_circular);
+d3.select("input[value=\"line\"]").on("click", line_layout);
+d3.select("input[value=\"circular1\"]").on("click", circular_layout);
+d3.select("input[value=\"circular2\"]").on("click", circular_layout_grouped);
+
+d3.select("input[value=\"nocolor\"]").on("click", function() {
+  d3.selectAll("circle").transition().duration(500).style("fill", "#66CC66");
+})
+
+d3.select("input[value=\"color_cat\"]").on("click", category_color);
+
+d3.select("input[value=\"nosize\"]").on("click", function() {
+  d3.selectAll("circle").transition().duration(500).attr("r", 5);
+})
+
+//d3.select("input[value=\"size_cat\"]").on("click", category_size);
+
+d3.select("input[value=\"sort_gdp\"]").on("click", function(){ sort_by = "gdp"; circular_layout(); });
+d3.select("input[value=\"sort_population\"]").on("click", function(){ 
+sort_by = "population"; 
+circular_layout(); });
+
+
+var link = svg.selectAll(".link")
+              .data(graph.links);
+
+link.enter().append("line")
+    .attr("class", "link")
+    .style("stroke-width", function(d) { 
+    return lineWidthScale(d.value)
+    ; });
+
+var node = svg.selectAll(".node")
+              .data(graph.nodes)
+            .enter()
+              .append("g").attr("class", "node")
+		      .on("mouseover", mouseovered)
+		      .on("mouseout", mouseouted);
+
+node.append("circle")
+    .attr("r", 5)
+
+node.append("text")
+  .text(function (d) { return d.name;})
+  .attr("x", 7)
+  .attr("y", 3)
+  .attr("class", "text");
+
+force_layout();
+
+});
+</script>
+</body>
+</html>
