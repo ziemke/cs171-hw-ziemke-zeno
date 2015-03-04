@@ -41,35 +41,22 @@
 <body>
 <script src="http://d3js.org/d3.v3.min.js"></script>
 <pre>
-	- Links in Force 1,2,3 crumble everything and makes transitions slow
-- lines rendered infront of text in circular layout
-- sort GDP/Pop in grouped layout
 - only show short gdp/pop when 
-- some links not drawn???
+- links transition in
+- overall ok?
 </pre>
   <form>
   Layout:
-    <label><input type="radio" name="layout" value="force1" checked> Force 1</label>
-    <label><input type="radio" name="layout" value="force2"> Force 2</label>
-    <label><input type="radio" name="layout" value="force3"> Force 3</label>
-    <label><input type="radio" name="layout" value="circular1"> Circular 1</label>  
-    <label><input type="radio" name="layout" value="circular2"> Circular 2</label>  
-    <label><input type="radio" name="layout" value="line"> Line</label>
+    <label><input type="radio" name="layout" value="force_layout" checked> Force 1</label>
+    <label><input type="radio" name="layout" value="force_layout_grouped"> Force 2</label>
+    <label><input type="radio" name="layout" value="force_layout_grouped_circular"> Force 3</label>
+    <label><input type="radio" name="layout" value="circular_layout"> Circular 1</label>  
+    <label><input type="radio" name="layout" value="circular_layout_grouped"> Circular 2</label>  
     </form>
-  <form>
-  Color:
-    <label><input type="radio" name="color" value="nocolor" checked> None</label>
-    <label><input type="radio" name="color" value="color_cat" > Category</label>
-  </form>
-  <form>
-  <!--Size:
-    <label><input type="radio" name="size" value="nosize" checked> None</label>
-    <label><input type="radio" name="size" value="size_cat" > Category</label>
-  </form>
-  <form>-->
+  <form id="sort_by" style="display:none">
   Sort:
-    <label><input type="radio" name="sort_by" value="sort_gdp" checked> GDP</label>
-    <label><input type="radio" name="sort_by" value="sort_population" > Population</label>
+    <label><input type="radio" name="sort_by" value="gdp" checked> GDP</label>
+    <label><input type="radio" name="sort_by" value="population" > Population</label>
   </form>
 <script>
 
@@ -130,8 +117,8 @@ graph.nodes.forEach(function(d, i) {
         if (target_index >= 0) { 
 
           graph.links.push(
-            { "source": i,
-              "target": target_index
+            { "source": graph.nodes[i],
+              "target": graph.nodes[target_index]
 
               //,"total_export": p.total_export
              }); 
@@ -153,13 +140,13 @@ var force = d3.layout.force()
     .on("end", function(d) {})
 
 function tick(d) {
-  graph_update(0);
+  graph_update(0, false);
 }
 
 function force_layout() {
 
  force.nodes(graph.nodes)
-      .links(graph.links)
+      //.links(graph.links)
       .on("tick", tick)
       .start();
 }
@@ -174,11 +161,11 @@ function force_layout_grouped() {
     o.x += groupScale(o.continent) * k;
     });
 
-    graph_update(0);
+    graph_update(0, false);
  });
 
  force.nodes(graph.nodes)
-      .links(graph.links)
+    //  .links(graph.links)
       .start();
 }
 
@@ -215,25 +202,14 @@ function force_layout_grouped_circular() {
     o.y += groups[o.continent].y / 100 * k;
     });
 
-    graph_update(0);
+    graph_update(0, false);
  });
 
  force.nodes(graph.nodes)
-      .links(graph.links)
+      //.links(graph.links)
       .start();
 }
 
-
-function line_layout() {
-
-  force.stop();
-
-  graph.nodes.forEach(function(d, i) {
-    d.y = height/2;
-  })
-
-  graph_update(500);
-}
 
 function circular_layout() {
   force.stop();
@@ -266,7 +242,7 @@ function circular_layout() {
     return d.data;
   })
 
-  graph_update(500);
+  graph_update(500, true);
 }
 
 
@@ -325,36 +301,32 @@ function circular_layout_grouped() {
       });
     });
 
-  graph_update(500);
+  graph_update(500, true);
  
 }
 
 
-function category_color() {
+function graph_update(duration, show_links) {
+	d3.select("form#sort_by").style("display", "none");
 
-  d3.selectAll("circle").transition().duration(500)
-                        .style("fill", function(d) { 
-                          return fill(d.cat); 
-                        });
-}
+	if (active_layout == circular_layout || active_layout == circular_layout_grouped)
+		d3.select("form#sort_by").style("display", "block");
 
-/*function category_size() {
+	if (show_links) {
+	  link.transition().duration(duration)
+		  .attr("x1", function(d) { return d.target.x; })
+		  .attr("y1", function(d) { return d.target.y; })
+		  .attr("x2", function(d) { return d.source.x; })
+		  .attr("y2", function(d) { return d.source.y; });
+	} else {
+		 link.transition().duration(duration)
+		 .attr("x1", 0)
+		 .attr("y1", 0)
+		 .attr("x2", 0)
+		 .attr("y2", 0);
+	}
 
-  d3.selectAll("circle").transition().duration(500)
-                        .attr("r", function(d) { 
-                          return Math.sqrt(node_scale(d.cat)); 
-                        });
-}*/
-
-function graph_update(duration) {
-
-  link.transition().duration(duration)
-      .attr("x1", function(d) { return d.target.x; })
-      .attr("y1", function(d) { return d.target.y; })
-      .attr("x2", function(d) { return d.source.x; })
-      .attr("y2", function(d) { return d.source.y; });
-
-  node.transition().duration(duration)
+    node.transition().duration(duration)
       .attr("transform", function(d) { 
         return "translate("+d.x+","+d.y+")"; 
       });
@@ -385,30 +357,22 @@ function mouseouted(d) {
 	  
 	}
 
+var active_layout = force_layout;
 
-d3.select("input[value=\"force1\"]").on("click", force_layout);
-d3.select("input[value=\"force2\"]").on("click", force_layout_grouped);
-d3.select("input[value=\"force3\"]").on("click", force_layout_grouped_circular);
-d3.select("input[value=\"line\"]").on("click", line_layout);
-d3.select("input[value=\"circular1\"]").on("click", circular_layout);
-d3.select("input[value=\"circular2\"]").on("click", circular_layout_grouped);
 
-d3.select("input[value=\"nocolor\"]").on("click", function() {
-  d3.selectAll("circle").transition().duration(500).style("fill", "#66CC66");
-})
 
-d3.select("input[value=\"color_cat\"]").on("click", category_color);
+d3.selectAll("input[name=\"layout\"]").on("click", function() { 
+eval("active_layout = " + this.value); 
+active_layout();
+});
 
 d3.select("input[value=\"nosize\"]").on("click", function() {
   d3.selectAll("circle").transition().duration(500).attr("r", 5);
 })
 
-//d3.select("input[value=\"size_cat\"]").on("click", category_size);
-
-d3.select("input[value=\"sort_gdp\"]").on("click", function(){ sort_by = "gdp"; circular_layout(); });
-d3.select("input[value=\"sort_population\"]").on("click", function(){ 
-sort_by = "population"; 
-circular_layout(); });
+d3.selectAll("input[name=\"sort_by\"]").on("click", function(){ 
+sort_by = this.value; 
+active_layout(); });
 
 
 var link = svg.selectAll(".link")
@@ -416,13 +380,20 @@ var link = svg.selectAll(".link")
 
 link.enter().append("line")
     .attr("class", "link")
+     .attr("x1", 0)
+     .attr("x2", 0)
+     .attr("y1", 0)
+     .attr("y2", 0)
 
 var node = svg.selectAll(".node")
               .data(graph.nodes)
             .enter()
               .append("g").attr("class", "node")
 		      .on("mouseover", mouseovered)
-		      .on("mouseout", mouseouted);
+		      .on("mouseout", mouseouted)
+		      .attr("transform", function(d) { 
+        		return "translate(0,0)"; 
+      		});
 
 node.append("circle")
     .attr("r", 5)
@@ -433,7 +404,7 @@ node.append("text")
   .attr("y", 3)
   .attr("class", "text");
 
-force_layout();
+active_layout();
 
 });
 </script>

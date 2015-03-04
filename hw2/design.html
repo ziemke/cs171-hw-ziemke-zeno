@@ -42,6 +42,8 @@
 <body>
 <script src="http://d3js.org/d3.v3.min.js"></script>
 <pre>
+- drawing of links / effect
+- bundeling
 - sort GDP/Pop in grouped layout
 - necessary to sort in linear and scatterplot view?
 - add more sorting
@@ -51,15 +53,15 @@
 - show labels so that they dont overlap
 - adjust circle size relative to number of items
 - size color or both?
+- add layout that shows everything on a map
+
+- questions: which countries are close to this one (lines)
 </pre>
   <form>
   Layout:
-    <label><input type="radio" name="layout" value="force1" checked> Force 1</label>
-    <label><input type="radio" name="layout" value="force2"> Force 2</label>
     <label><input type="radio" name="layout" value="force3"> Force 3</label>
     <label><input type="radio" name="layout" value="circular1"> Circular 1</label>  
     <label><input type="radio" name="layout" value="circular2"> Circular 2</label>  
-    <label><input type="radio" name="layout" value="line"> Line</label>
     </form>
     <form>
   Group by:
@@ -212,32 +214,6 @@ function tick(d) {
   graph_update(0);
 }
 
-function force_layout() {
-
- force.nodes(graph.nodes)
-  //    .links(graph.links)
-      .on("tick", tick)
-      .start();
-}
-
-
-function force_layout_grouped() {
-
- force.on("tick", function(e){
-   var k = 6 * e.alpha;
-
-  graph.nodes.forEach(function(o, i) {
-    o.x += groupScale(o.continent) * k;
-    });
-
-    graph_update(0);
- });
-
- force.nodes(graph.nodes)
-      //.links(graph.links)
-      .start();
-}
-
 
 function force_layout_grouped_circular() {
 
@@ -288,17 +264,6 @@ function force_layout_grouped_circular() {
       .start();
 }
 
-
-function line_layout() {
-
-  force.stop();
-
-  graph.nodes.forEach(function(d, i) {
-    d.y = height/2;
-  })
-
-  graph_update(500);
-}
 
 function circular_layout() {
   force.stop();
@@ -487,10 +452,7 @@ function mouseouted(d) {
 	}
 
 
-d3.select("input[value=\"force1\"]").on("click", force_layout);
-d3.select("input[value=\"force2\"]").on("click", force_layout_grouped);
 d3.select("input[value=\"force3\"]").on("click", force_layout_grouped_circular);
-d3.select("input[value=\"line\"]").on("click", line_layout);
 d3.select("input[value=\"circular1\"]").on("click", circular_layout);
 d3.select("input[value=\"circular2\"]").on("click", circular_layout_grouped);
 
