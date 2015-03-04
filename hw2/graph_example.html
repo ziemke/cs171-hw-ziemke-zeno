@@ -14,7 +14,7 @@
 		stroke-width: .9px;
 	}
 	
-	.node:hover {
+	.hover {
 	fill: black;
 	}
 	
@@ -42,11 +42,13 @@
 <script src="http://d3js.org/d3.v3.min.js"></script>
 <pre>
 - links transition in
-- overall ok?
 </pre>
   <form>
   Layout:
-    <label><input type="radio" name="layout" value="force_layout" checked> Force 1</label>
+    <label><input type="radio" name="layout" value="ranking_layout_even_spaced" checked> Ranking #1</label>
+    <label><input type="radio" name="layout" value="ranking_layout_scaled"> Ranking #2</label>
+    <label><input type="radio" name="layout" value="scatterplot_layout"> Scatterplot</label>
+    <label><input type="radio" name="layout" value="force_layout"> Force 1</label>
     <label><input type="radio" name="layout" value="force_layout_grouped"> Force 2</label>
     <label><input type="radio" name="layout" value="force_layout_grouped_circular"> Force 3</label>
     <label><input type="radio" name="layout" value="circular_layout"> Circular 1</label>  
@@ -57,6 +59,14 @@
     <label><input type="radio" name="sort_by" value="gdp" checked> GDP</label>
     <label><input type="radio" name="sort_by" value="population" > Population</label>
   </form>
+
+  <form id="sort_by_scatterplot" style="display:none">
+  Sort:
+    <label><input type="radio" name="sort_by_scatterplot" value="population_gdp" checked> Population and GDP</label>
+    <label><input type="radio" name="sort_by_scatterplot" value="longitude_latitude" > Longitude and Latitude</label>
+  </form>
+
+  
 <script>
 
 d3.json("data/countries_1995_2012.json", function(data) {
@@ -64,6 +74,11 @@ d3.json("data/countries_1995_2012.json", function(data) {
 var margin = {top: 10, bottom: 10, left: 10, right: 60};
 var width = 1100 - margin.left - margin.right;
 var height = 900 - margin.top - margin.bottom;
+var height_ranking = 2400;
+
+var nodeRadius = 5;
+
+var active_layout = ranking_layout_even_spaced;
 
 var svg = d3.select("body").append("svg")
             .attr("width", width)
@@ -82,6 +97,8 @@ var selected_year = 1995;
 
 var sort_by = "gdp";
 
+var sort_by_scatterplot = ["population", "gdp"];
+
 var accessor_selected_year_data = function(d) {
   year_data = [];
   d.years.forEach(function(m, i) {
@@ -90,6 +107,24 @@ var accessor_selected_year_data = function(d) {
   });
 
   return year_data;
+}
+
+var accesor_sort_field = function(d) {
+  return accessor_selected_year_data(d)[sort_by];
+}
+
+var accesor_sort_field_scatterplot_x = function(d) {
+	if (sort_by_scatterplot[1] == "latitude")
+		return d[sort_by_scatterplot[1]];
+	else
+  		return accessor_selected_year_data(d)[sort_by_scatterplot[1]];
+}
+
+var accesor_sort_field_scatterplot_y = function(d) {
+	if (sort_by_scatterplot[0] == "longitude")
+		return d[sort_by_scatterplot[0]];
+	else
+  		return accessor_selected_year_data(d)[sort_by_scatterplot[0]];
 }
 
 var accessor_population = function(d) {
@@ -304,9 +339,99 @@ function circular_layout_grouped() {
  
 }
 
+function ranking_layout_even_spaced() {
+	force.stop();
+
+	svg.attr("height", height_ranking);
+	d3.select("form#sort_by").style("display", "block");
+	d3.select("form#sort_by_scatterplot").style("display", "none");
+	
+
+	 link
+		 .attr("x1", 0)
+		 .attr("y1", 0)
+		 .attr("x2", 0)
+		 .attr("y2", 0);
+
+	svg.selectAll(".node")
+	.sort(function (a,b) {
+		return d3.descending(accessor_selected_year_data(a)[sort_by], accessor_selected_year_data(b)[sort_by])
+	})
+	.transition(500)
+	 .attr("transform", function(d, i) { 
+       return "translate(10,"+(i*4*nodeRadius+20)+")"; 
+     });
+
+}
+
+function ranking_layout_scaled() {
+	force.stop();
+
+	svg.attr("height", 600);
+
+	var yScale = d3.scale.linear()
+	.domain(d3.extent(data, accesor_sort_field))
+	.range([600-20, 0]);  
+	
+
+	d3.select("form#sort_by").style("display", "block");
+	d3.select("form#sort_by_scatterplot").style("display", "none");
+	
+
+	 link
+		 .attr("x1", 0)
+		 .attr("y1", 0)
+		 .attr("x2", 0)
+		 .attr("y2", 0);
+
+	svg.selectAll(".node")
+	.sort(function (a,b) {
+		return d3.descending(accessor_selected_year_data(a)[sort_by], accessor_selected_year_data(b)[sort_by])
+	})
+	.transition(500)
+	 .attr("transform", function(d, i) { 
+       return "translate(10,"+(yScale(accessor_selected_year_data(d)[sort_by])+10)+")"; 
+     });
+
+}
+
+
+function scatterplot_layout() {
+	force.stop();
+
+	var yScale = d3.scale.linear()
+	.domain(d3.extent(data, accesor_sort_field_scatterplot_y))
+	.range([0, 600]);  
+
+	var xScale = d3.scale.linear()
+	.domain(d3.extent(data, accesor_sort_field_scatterplot_x))
+	.range([0, 600]);  
+	
+	
+	d3.select("form#sort_by").style("display", "none");
+	d3.select("form#sort_by_scatterplot").style("display", "block");
+
+
+	 link
+		 .attr("x1", 0)
+		 .attr("y1", 0)
+		 .attr("x2", 0)
+		 .attr("y2", 0);
+
+	svg.selectAll(".node")
+	.transition(500)
+	 .attr("transform", function(d, i) { 
+       return "translate("+(xScale(accesor_sort_field_scatterplot_x(d))+10)+
+       ","+(yScale(accesor_sort_field_scatterplot_y(d))+10)+")"; 
+     });
+
+}
 
 function graph_update(duration, show_links) {
+	svg.attr("height", height);
 	d3.select("form#sort_by").style("display", "none");
+	d3.select("form#sort_by_scatterplot").style("display", "none");
+
 
 	if (active_layout == circular_layout || active_layout == circular_layout_grouped)
 		d3.select("form#sort_by").style("display", "block");
@@ -332,18 +457,22 @@ function graph_update(duration, show_links) {
 }
 
 function mouseovered(d) {
-   node
-   .each(function(n) { n.partner = false; })
+	if (active_layout == circular_layout || active_layout == circular_layout_grouped) {
+	   node
+	   .each(function(n) { n.partner = false; })
 
-  link
-  .classed("link--highlight", function(l) { if (l.source === d) return l.target.partner = true; })
-    .filter(function(l) { return l.source === d; })
-      .each(function() { this.parentNode.appendChild(this); });
+	  link
+	  .classed("link--highlight", function(l) { if (l.source === d) return l.target.partner = true; })
+		.filter(function(l) { return l.source === d; })
+		  .each(function() { this.parentNode.appendChild(this); });
 
-  node
-  	.classed("node--hidden", function(n) { return !(n.partner || n === d); })
-  
-   d3.selectAll(".node").each(function() { this.parentNode.appendChild(this); });
+	  node
+		.classed("node--hidden", function(n) { return !(n.partner || n === d); })
+
+	   d3.selectAll(".node").each(function() { this.parentNode.appendChild(this); });
+
+	d3.select(this).classed("hover", true);
+	}
 }
 
 function mouseouted(d) {
@@ -352,12 +481,10 @@ function mouseouted(d) {
 		
 	  node
 	  .classed("node--highlight", false)
-	  .classed("node--hidden", false);
+	  .classed("node--hidden", false)
+	  .classed("hover", false);
 	  
 	}
-
-var active_layout = force_layout;
-
 
 
 d3.selectAll("input[name=\"layout\"]").on("click", function() { 
@@ -366,12 +493,16 @@ active_layout();
 });
 
 d3.select("input[value=\"nosize\"]").on("click", function() {
-  d3.selectAll("circle").transition().duration(500).attr("r", 5);
+  d3.selectAll("circle").transition().duration(500).attr("r", nodeRadius);
 })
 
 d3.selectAll("input[name=\"sort_by\"]").on("click", function(){ 
 sort_by = this.value; 
 active_layout(); });
+
+d3.selectAll("input[name=\"sort_by_scatterplot\"]").on("click", function(){ 
+sort_by_scatterplot = this.value.split("_"); 
+scatterplot_layout(); });
 
 
 var link = svg.selectAll(".link")
@@ -395,7 +526,7 @@ var node = svg.selectAll(".node")
       		});
 
 node.append("circle")
-    .attr("r", 5)
+    .attr("r", nodeRadius)
 
 node.append("text")
   .text(function (d) { return d.name;})
