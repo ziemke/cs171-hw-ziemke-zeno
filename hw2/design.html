@@ -64,7 +64,6 @@
 - change size of circles
 - toggle showing different things
 - use color
-- time selection
 
 
 - questions: which countries are close to this one (lines)
@@ -89,11 +88,11 @@ done:
  </form>
   <form>
   <form>
-  Color:
+ <!-- Color:
     <label><input type="radio" name="color" value="nocolor" checked> None</label>
     <label><input type="radio" name="color" value="color_cat" > Category</label>
   </form>
-  <form>
+  <form>-->
   Size:
     <label><input type="radio" name="size" value="nosize" checked> None</label>
     <label><input type="radio" name="size" value="population" > Population</label>
@@ -279,7 +278,7 @@ var lineWidthScale = d3.scale.log()
 .range([0.4, 3.7]);
 
 
-function circular_layout_grouped(duration) {
+function circular_layout_grouped(duration, update_links) {
   var r = Math.min(height, width)/5;
 
   var arc = d3.svg.arc()
@@ -374,7 +373,9 @@ function circular_layout_grouped(duration) {
       });
     });
 
-
+  if (update_links == true)
+  	generateLinks();
+  	 
   graph_update(duration);
  
 }
@@ -411,8 +412,6 @@ function node_size(field) {
 }
 
 function graph_update(duration) {
-
-generateLinks();
 
 link.remove();
 
@@ -516,8 +515,8 @@ d3.selectAll("input[name=\"group_by\"]").on("click", function(){
 
  d3.selectAll("input#slider-time").on("input",
   function() { 
-	selected_year = this.value; 
-	circular_layout_grouped(0);
+	selected_year = this.value;
+	circular_layout_grouped(0, true);
  }); //no transition animation
 
 
@@ -562,7 +561,7 @@ node.append("text")
   .attr("y", 3)
   .attr("class", "text")
 
-circular_layout_grouped(500);
+circular_layout_grouped(500, true);
 
 });
 </script>
