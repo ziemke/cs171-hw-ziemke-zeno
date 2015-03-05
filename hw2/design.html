@@ -4,7 +4,7 @@
 	<style>
 	.link {
 		stroke: steelblue;
-		/*stroke-width: .8px;*/
+		stroke-width: .8px;
 		opacity: 0.6;
 		fill: none;
 	}
@@ -170,45 +170,59 @@ var cluster = d3.layout.cluster()
 
 var bundle = d3.layout.bundle();
 
-var line = d3.svg.line.radial()
+var line = d3.svg.line()
     .interpolate("bundle")
-    .tension(.85)
-    .radius(function(d) { return d.y; })
-    .angle(function(d) { return d.x / 180 * Math.PI; });
+    .tension(0.7)
+    .x(function(d) { 
+    return d.x; })
+	.y(function(d) { 
+	return d.y; })
 
 
 
 
-var tree = data[0];
-data.shift();
-tree.children = data;
-tree.children.forEach(function(c) { 
-c.parent = tree; });
+graph.nodes = data;
+var group_magnets = [];
+var center_magnet = {"x": width/2, "y": height/2, "name": "center_magnet"};
 
-graph.nodes = cluster.nodes(tree);
+function generateLinks() {
+	
+	if(group_magnets.length > 0) {
+		center_magnet["children"] = group_magnets;
+		group_magnets.forEach(function(m) {
+			m.parent = center_magnet;
+			m.children.forEach(function(d) {d.parent=m;})	
+		})
+		
+	} else {
+		center_magnet = center_magnet["children"] = graph.nodes;
+		graph.nodes.forEach(function(d) { d.parent=center_magnet;});
+	}
 
-graph.nodes.forEach(function(d, i) {
-  d.years.forEach(function(y, j) {
-    if(y.year == selected_year) {
-      y.top_partners.forEach(function(p, k) {
+	graph.nodes.forEach(function(d, i) {
+	  d.years.forEach(function(y, j) {
+		if(y.year == selected_year) {
+		  y.top_partners.forEach(function(p, k) {
 
-        var target_index = graph.nodes.map(function(c) {
-                        return c.country_id;
-                      }).indexOf(p.country_id);
+			var target_index = graph.nodes.map(function(c) {
+							return c.country_id;
+						  }).indexOf(p.country_id);
 
-        if (target_index >= 0) { 
+			if (target_index >= 0) { 
 
-          graph.links.push(
-            { "source": graph.nodes[i],
-              "target": graph.nodes[target_index],
-              "value": p.total_export
-             }); 
-        }
-      });
-      
-    }
-  })
-})
+			  graph.links.push(
+				{ "source": graph.nodes[i],
+				  "target": graph.nodes[target_index],
+				  "value": p.total_export
+				 }); 
+			}
+		  });
+
+		}
+	  })
+	})
+}
+
 
 
 var lineWidthScale = d3.scale.log()
@@ -304,19 +318,30 @@ function circular_layout_grouped() {
   				.rollup(function(leaves) { return pie_nodes(leaves); })
 				.entries(graph.nodes);
   graph.nodes = [];
+
+  group_magnets = [];
+
+  nested_nodes.forEach(function(g) {
+  	var offset = groups[g.key];
+  	group_magnets.push({
+  			"x": offset.x*3 + 400, 
+  			"y": offset.y*3 + 400, 
+  			"children": g.values.map(function(d) {return d.data;}),
+  			"name": g.key
+  			});
+  });
   
   nested_nodes.forEach(function(g) {
   	var group_r = g.values.length*5.5;
-  	
+  
     return g.values.forEach(function(d, i) {
         // Needed to caclulate the centroid
         d.innerRadius = 0;
         d.outerRadius = group_r;
 
         // Building the data object we are going to return
-
-        var offset = (group_by == "continent") ? groups[d.data.continent] : groups[catScale(accessor_selected_year_data(d.data)[group_by])]
-         
+		var offset = (group_by == "continent") ? groups[d.data.continent] : groups[catScale(accessor_selected_year_data(d.data)[group_by])]
+   
         d.data.x_label = d.data.x;
         d.data.y_label = d.data.y;
          
@@ -326,6 +351,7 @@ function circular_layout_grouped() {
         graph.nodes.push(d.data);
       });
     });
+
 
   graph_update(500);
  
@@ -365,11 +391,28 @@ function node_size(field) {
 
 function graph_update(duration) {
 
-  link.transition().duration(duration)
+generateLinks();
+
+link.remove();
+
+link = svg.selectAll(".link")
+          //.data([bundle(graph.links)[10]])
+          .data(bundle(graph.links))
+
+link.exit().remove();
+
+link.enter().append("path")
+	.each(function(d) { d.source = d[0], d.target = d[d.length - 1]; })
+	.attr("class", "link")
+	.attr("d", line)
+  //.exit()
+//	.remove();
+
+ /* link.transition().duration(duration)
       .attr("x1", function(d) { return d.target.x; })
       .attr("y1", function(d) { return d.target.y; })
       .attr("x2", function(d) { return d.source.x; })
-      .attr("y2", function(d) { return d.source.y; });
+      .attr("y2", function(d) { return d.source.y; });*/
 
   node.transition().duration(duration)
       .attr("transform", function(d) { 
@@ -434,14 +477,14 @@ d3.selectAll("input[name=\"group_by\"]").on("click", function(){
 
 
 var link = svg.selectAll(".link")
-              .data(graph.links);
+/*              .data(graph.links);
 
 link.enter().append("line")
     .attr("class", "link")
    // .attr("d",line)
     .style("stroke-width", function(d) { 
     return lineWidthScale(d.value)
-    ; });
+    ; });*/
 
 var node = svg.selectAll(".node")
               .data(graph.nodes)
