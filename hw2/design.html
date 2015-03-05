@@ -106,6 +106,10 @@ done:
     <label><input type="radio" name="sort_by" value="gdp"> GDP</label>
     <label><input type="radio" name="sort_by" value="life_expectancy" > Life Expectancy</label>
   </form>
+
+  <form>
+  Year: <span id="year_min"></span><input type="range" name="points" min="1995" max="2012" step="1" value="0" id="slider-time"><span id="year_max"></span>
+  </form>
 <script>
 
 d3.json("data/countries_1995_2012.json", function(data) {
@@ -195,6 +199,7 @@ var lineGroup = d3.svg.line()
 	return d.y; });
 
 
+updateYearsRange(data);
 
 graph.nodes = data;
 var group_magnets = [];
@@ -247,13 +252,34 @@ function angle(d) {
   return (d.startAngle + d.endAngle) * 90 / Math.PI;
 }
 
+function updateYearsRange(input_data) {
+
+	// make sure that we catch datasets that might have bigger date ranges than others
+	var allYearData = [];
+	input_data.forEach(function(country) { 
+		country.years.forEach(function(yearData) {
+			allYearData.push(yearData); 
+		});
+	});
+
+	var range = {
+		"minimum": d3.min(allYearData, function(d) {return d.year; }), 
+		"maximum": d3.max(allYearData, function(d) {return d.year; })
+	};
+
+	d3.select("span[id=year_min]").text(range["minimum"]);	
+	d3.select("span[id=year_max]").text(range["maximum"]);
+	d3.select("input[id=slider-time]")
+	  .attr("min", range["minimum"])
+	  .attr("max", range["maximum"]);			
+  }
 
 
 var lineWidthScale = d3.scale.log()
 .range([0.4, 3.7]);
 
 
-function circular_layout_grouped() {
+function circular_layout_grouped(duration) {
   var r = Math.min(height, width)/5;
 
   var arc = d3.svg.arc()
@@ -349,7 +375,7 @@ function circular_layout_grouped() {
     });
 
 
-  graph_update(500);
+  graph_update(duration);
  
 }
 
@@ -481,12 +507,18 @@ d3.selectAll("input[name=\"size\"]").on("click", function() { node_size(this.val
 
 
 d3.selectAll("input[name=\"sort_by\"]").on("click", function(){
-	sort_by = this.value; circular_layout_grouped();
+	sort_by = this.value; circular_layout_grouped(500);
 });
 
 d3.selectAll("input[name=\"group_by\"]").on("click", function(){
-	group_by = this.value; circular_layout_grouped();
+	group_by = this.value; circular_layout_grouped(500);
 });
+
+ d3.selectAll("input#slider-time").on("input",
+  function() { 
+	selected_year = this.value; 
+	circular_layout_grouped(0);
+ }); //no transition animation
 
 
 var link = svg.selectAll(".link")
@@ -530,7 +562,7 @@ node.append("text")
   .attr("y", 3)
   .attr("class", "text")
 
-circular_layout_grouped();
+circular_layout_grouped(500);
 
 });
 </script>
