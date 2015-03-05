@@ -57,13 +57,13 @@
 - change size of circles
 
 - questions: which countries are close to this one (lines)
+- show data in bubble
 
 - issues I had: outliniers -> log scale
 - show import/export
 </pre>
   <form>
   Layout:
-    <label><input type="radio" name="layout" value="force3"> Force 3</label>
     <label><input type="radio" name="layout" value="circular1"> Circular 1</label>  
     <label><input type="radio" name="layout" value="circular2"> Circular 2</label>  
     </form>
@@ -100,6 +100,12 @@ d3.json("data/countries_1995_2012.json", function(data) {
 var margin = {top: 10, bottom: 10, left: 10, right: 60};
 var width = 1100 - margin.left - margin.right;
 var height = 900 - margin.top - margin.bottom;
+
+var thresholds = { 
+"life_expectancy": [61.0510081300813, 72.2657479674797], 
+"gdp": [20863000000, 500000000000],
+"population": [20740726, 81678051],
+}
 
 var svg = d3.select("body").append("svg")
             .attr("width", width)
@@ -205,70 +211,6 @@ var lineWidthScale = d3.scale.log()
 .range([0.8, 4]);
 
 
-// Generate the force layout
-var force = d3.layout.force()
-    .size([width, height])
-    .charge(-50)
-    .linkDistance(100)
-    .on("tick", tick)
-    .on("start", function(d) {})
-    .on("end", function(d) {})
-
-function tick(d) {
-  graph_update(0);
-}
-
-
-function force_layout_grouped_circular() {
-
-   var r = Math.min(height, width)/2;
-
-  var arc = d3.svg.arc()
-         // .outerRadius(r);
-
-  var pie = d3.layout.pie()
-          .value(function(d, i) { 
-            return 1;  // We want an equal pie share/slice for each point
-          });
-
-  var groups = {};
-	
-  var cats = (group_by == "continent") ? continents : ["Small " + group_by, "Middle " + group_by, "Large " + group_by]; 
-  	
-
-  pie(cats).forEach(function(d) {
-    d.innerRadius = 0;
-    d.outerRadius = r;
-
-    groups[d.data] = {
-             "x": arc.centroid(d)[0],
-             "y":arc.centroid(d)[1]
-            };
-  })
- 
- 
- force.on("tick", function(e){
-   var k = 6 * e.alpha;
-
-  graph.nodes.forEach(function(o, i) {
-  	if (group_by == "continent") {
-		o.x += groups[o.continent].x / 100 * k;
-		o.y += groups[o.continent].y / 100 * k;
-  	} else {
-		o.x += groups[o[group_by]].x / 100 * k;
-		o.y += groups[o[group_by]].y / 100 * k;
-    }
-    });
-
-    graph_update(0);
- });
-
- force.nodes(graph.nodes)
- //     .links(graph.links)
-      .start();
-}
-
-
 function circular_layout() {
   force.stop();
 
@@ -305,7 +247,6 @@ function circular_layout() {
 
 
 function circular_layout_grouped() {
-  force.stop();
   var r = Math.min(height, width)/5;
 
   var arc = d3.svg.arc()
@@ -344,13 +285,11 @@ function circular_layout_grouped() {
             return 1;  // We want an equal pie share/slice for each point
           });
 
-  var catScale = d3.scale.quantile()
-			.domain(d3.extent(graph.nodes, function(l) {
-				 return accessor_selected_year_data(l)[group_by]; 
-			}))
+  var catScale = d3.scale.threshold()
+			.domain(thresholds[group_by])
 			.range(cats);
 
-  console.log(catScale.quantiles());
+  //console.log(catScale.quantiles());
 
   nested_nodes = d3.nest()
   				.key(function(d) { 
@@ -470,7 +409,6 @@ function mouseouted(d) {
 	}
 
 
-d3.select("input[value=\"force3\"]").on("click", force_layout_grouped_circular);
 d3.select("input[value=\"circular1\"]").on("click", circular_layout);
 d3.select("input[value=\"circular2\"]").on("click", circular_layout_grouped);
 
