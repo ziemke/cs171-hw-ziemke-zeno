@@ -80,12 +80,7 @@
 done:
 - adjust circle size relative to number of items
 -->
-  <form>
-  Layout:
-    <label><input type="radio" name="layout" value="circular1"> Circular 1</label>  
-    <label><input type="radio" name="layout" value="circular2"> Circular 2</label>  
-    </form>
-    <form>
+<form>
   Group by:
     <label><input type="radio" name="group_by" value="continent"> Continent</label>
     <label><input type="radio" name="group_by" value="population" > Population</label>
@@ -120,7 +115,7 @@ var width = 1100 - margin.left - margin.right;
 var height = 900 - margin.top - margin.bottom;
 
 var thresholds = { 
-"life_expectancy": [61.0510081300813, 72.2657479674797], 
+"life_expectancy": [60.0510081300813, 75.2657479674797], 
 "gdp": [20863000000, 500000000000],
 "population": [20740726, 81678051],
 }
@@ -258,41 +253,6 @@ var lineWidthScale = d3.scale.log()
 .range([0.4, 3.7]);
 
 
-function circular_layout() {
-  var r = Math.min(height, width)/2;
-
-  var arc = d3.svg.arc()
-         // .outerRadius(r);
-
-  var pie = d3.layout.pie()
-          .sort(function(a, b) { 
-          if (sort_by == "population")
-            return accessor_population(a) - accessor_population(b);
-          else
-            return accessor_gdp(a) - accessor_gdp(b);
-          }) // Sorting
-          .value(function(d, i) { 
-            return 1;  // We want an equal pie share/slice for each point
-          });
-
-  graph.nodes = pie(graph.nodes).map(function(d, i) {
-    // Needed to caclulate the centroid
-    d.innerRadius = 0;
-    d.outerRadius = graph.nodes.length*7.6;
-
-    // Building the data object we are going to return
-    d.data.x = arc.centroid(d)[0]+width/2;
-    d.data.y = arc.centroid(d)[1]+height/2;
-
-    d.data.angle = angle(d);
-
-    return d.data;
-  })
-
-  graph_update(500);
-}
-
-
 function circular_layout_grouped() {
   var r = Math.min(height, width)/5;
 
@@ -363,7 +323,11 @@ function circular_layout_grouped() {
   
   nested_nodes.forEach(function(g) {
   	var group_r = g.values.length*5.5;
-  
+
+  	if (g.values.length <= 5)
+  		group_r *= 3;
+  	else if (g.values.length <= 25)
+  		group_r *= 1.8;
     return g.values.forEach(function(d, i) {
         // Needed to caclulate the centroid
         d.innerRadius = 0;
@@ -507,9 +471,6 @@ function mouseouted(d) {
 	}
 
 
-d3.select("input[value=\"circular1\"]").on("click", circular_layout);
-d3.select("input[value=\"circular2\"]").on("click", circular_layout_grouped);
-
 d3.select("input[value=\"nocolor\"]").on("click", function() {
   d3.selectAll("circle").transition().duration(500).style("fill", "#66CC66");
 })
@@ -544,6 +505,20 @@ var node = svg.selectAll(".node")
               .append("g").attr("class", "node")
 		      .on("mouseover", mouseovered)
 		      .on("mouseout", mouseouted);
+		    /*  // .on("mouseout", function(d) {
+		     // 	if(!this.clicked) {
+		      //		mouseouted(d);
+		      //	}
+		     // 	})
+		   //  .on("click", function(d) {
+				if (this.clicked) {
+					mouseouted(d);
+		      		mouseovered(d);
+		      	} else {
+		      		this.clicked = true;
+		      		mouseovered(d);
+		      	}
+		      } )*/;
 
 node.append("circle")
     .attr("r", node_default_size)
