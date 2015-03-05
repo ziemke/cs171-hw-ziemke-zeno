@@ -95,7 +95,6 @@
 - calculate gdp/capita
 - arrange continents according to geograpical position
 - toggle showing different things
-- use color
 
 
 - questions: which countries are close to this one (lines)
@@ -115,7 +114,7 @@ done:
     <label><input type="radio" name="group_by" value="continent"> Continent</label>
     <label><input type="radio" name="group_by" value="population" > Population</label>
     <label><input type="radio" name="group_by" value="gdp" checked> GDP</label>
-    <label><input type="radio" name="group_by" value="life_expectancy" > Life Expectancy</label>
+    <label><input type="radio" name="group_by" value="life_expectancy"> Life Expectancy</label>
  </form>
   <form>
   <form>
@@ -130,7 +129,13 @@ done:
     <label><input type="radio" name="size" value="gdp"> GDP</label>
     <label><input type="radio" name="size" value="life_expectancy" > Life Expectancy</label>
   </form>
-  <form>
+<!--  <form>
+   Color:
+    <label><input type="radio" name="color" value="nosize" checked> None</label>
+    <label><input type="radio" name="color" value="population" > Population</label>
+    <label><input type="radio" name="color" value="gdp"> GDP</label>
+    <label><input type="radio" name="color" value="life_expectancy" > Life Expectancy</label>
+  </form>-->
   Sort:
     <label><input type="radio" name="sort_by" value="population" checked> Population</label>
     <label><input type="radio" name="sort_by" value="gdp"> GDP</label>
@@ -426,13 +431,20 @@ function circular_layout_grouped(duration, update_links) {
  
 }
 
-function category_color() {
+
+function node_color(field) {
+var color =  d3.scale.linear()
+			 .domain(d3.extent(graph.nodes, function(l) {
+				return accessor_selected_year_data(l)[field]; 
+			 }))
+			.range(["red", "white", "lightgreen"]);
 
   d3.selectAll("circle").transition().duration(500)
                         .style("fill", function(d) { 
-                          return fill(d.cat); 
+                          return color(accessor_selected_year_data(d)[field]); 
                         });
 }
+
 
 function node_size(field) {
 	if (field == "nosize")
@@ -581,7 +593,8 @@ d3.select("input[value=\"nocolor\"]").on("click", function() {
   d3.selectAll("circle").transition().duration(500).style("fill", "#66CC66");
 })
 
-d3.select("input[value=\"color_cat\"]").on("click", category_color);
+d3.selectAll("input[name=\"color\"]").on("click", function() { 
+node_color(this.value); })
 
 d3.selectAll("input[name=\"size\"]").on("click", function() { node_size(this.value); })
 
