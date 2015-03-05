@@ -36,13 +36,18 @@
 		opacity: 0.1;
 	}
 	
+	.link--hidden {
+		opacity: 0.3;
+		stroke: #d3d3d3;
+	}
+	
 	.node--highlight {
 		opacity: 1;
 	}
 	
 	.link_group.link--highlight {
 	 	opacity: 1;
-		stroke: blue;
+		stroke: steelblue;
 	}
 
 	.link_center.link--highlight {
@@ -50,9 +55,37 @@
 		stroke: black;
 	}
 
+	.d3-tip {
+	  line-height: 1;
+	  padding: 12px;
+	  background: rgba(0, 0, 0, 0.5);
+	  color: #fff;
+	  border-radius: 2px;
+	  pointer-events: none;
+	 /* width: 130px;*/
+	  font-size: 12px;
+	}
+
+	.d3-tip > .title
+	{
+	 font-weight: bold;
+	}
+
+	.d3-tip > table
+	 {
+	 	margin-left: -3px;
+	 }
+
+	 .d3-tip > .top_partners {
+
+	 }
+
 </style>
+
 <body>
+
 <script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="d3.tip.v0.6.3.js"></script>
 <pre>
 - links transitions
 - show gdp/life_expectancy, etc. value
@@ -61,13 +94,11 @@
 - add layout that shows everything on a map
 - calculate gdp/capita
 - arrange continents according to geograpical position
-- change size of circles
 - toggle showing different things
 - use color
 
 
 - questions: which countries are close to this one (lines)
-- show data in bubble
 - make too small circles bigger
 
 - issues I had: outliniers -> log scale
@@ -101,20 +132,27 @@ done:
   </form>
   <form>
   Sort:
-    <label><input type="radio" name="sort_by" value="population" > Population</label>
+    <label><input type="radio" name="sort_by" value="population" checked> Population</label>
     <label><input type="radio" name="sort_by" value="gdp"> GDP</label>
     <label><input type="radio" name="sort_by" value="life_expectancy" > Life Expectancy</label>
   </form>
 
   <form>
-  Year: <span id="year_min"></span><input type="range" name="points" min="1995" max="2012" step="1" value="0" id="slider-time"><span id="year_max"></span>
+  Year: <span id="year_min"></span><input type="range" name="points" min="1995" max="2012" step="1" value="2012" id="slider-time"><span id="year_max"></span>
   </form>
+
+  <br />
+  <form>
+  Tooltips: 
+  	<label><input type="radio" name="detailed_tooltips" value="1"> On</label>
+    <label><input type="radio" name="detailed_tooltips" value="0" checked> Off</label>
+   </form>
 <script>
 
 d3.json("data/countries_1995_2012.json", function(data) {
 
 var margin = {top: 10, bottom: 10, left: 10, right: 60};
-var width = 1100 - margin.left - margin.right;
+var width = 1200 - margin.left - margin.right;
 var height = 900 - margin.top - margin.bottom;
 
 var thresholds = { 
@@ -126,6 +164,8 @@ var thresholds = {
 var svg = d3.select("body").append("svg")
             .attr("width", width)
             .attr("height", height);
+
+d3.select("body").append("div").attr("style", "height:250px; width:100%; clear:both;");
 
 var fill = d3.scale.category10();
 
@@ -140,9 +180,11 @@ var selected_year = 2012;
 
 var node_default_size = 5;
 
-var sort_by = "gdp";
+var sort_by = "population";
 
 var group_by = "gdp";
+
+var detailed_tooltips = false;
 
 var accessor_selected_year_data = function(d) {
   year_data = [];
@@ -204,10 +246,7 @@ graph.nodes = data;
 var group_magnets = [];
 var center_magnet = {"x": width/2, "y": height/2, "name": "center_magnet"};
 
-function generateLinks() {
-
-	graph.links = [];
-	
+function updateMagnets() {
 	if(group_magnets.length > 0) {
 		center_magnet["children"] = group_magnets;
 		group_magnets.forEach(function(m) {
@@ -219,6 +258,12 @@ function generateLinks() {
 		center_magnet = center_magnet["children"] = graph.nodes;
 		graph.nodes.forEach(function(d) { d.parent=center_magnet;});
 	}
+}
+
+function generateLinks() {
+
+	graph.links = [];
+	updateMagnets();
 
 	graph.nodes.forEach(function(d, i) {
 	  d.years.forEach(function(y, j) {
@@ -279,7 +324,7 @@ var lineWidthScale = d3.scale.log()
 
 
 function circular_layout_grouped(duration, update_links) {
-  var r = Math.min(height, width)/5;
+  var r = Math.min(height, width)/5.5;
 
   var arc = d3.svg.arc()
 //          .outerRadius(r);
@@ -321,7 +366,6 @@ function circular_layout_grouped(duration, update_links) {
 			.domain(thresholds[group_by])
 			.range(cats);
 
-  //console.log(catScale.quantiles());
 
   nested_nodes = d3.nest()
   				.key(function(d) { 
@@ -375,6 +419,8 @@ function circular_layout_grouped(duration, update_links) {
 
   if (update_links == true)
   	generateLinks();
+  else
+  	updateMagnets();
   	 
   graph_update(duration);
  
@@ -396,7 +442,7 @@ function node_size(field) {
   							.domain(d3.extent(graph.nodes, function(l) {
 				 				return accessor_selected_year_data(l)[field]; 
 							}))
-  							.range([2, 7]);
+  							.range([2, 6]);
 		d3.selectAll("circle").transition().duration(500) .attr("r", function(d) { 
 			var r_new = node_scale(accessor_selected_year_data(d)[field]); 
 			
@@ -476,6 +522,8 @@ function mouseovered(d) {
 
   link
   .classed("link--highlight", function(l) { if (l.source === d) return l.target.partner = true; })
+  .classed("link--hidden", function(l) { return l.source !== d; })
+   
     .filter(function(l) { return l.source === d; })
       .each(function() { this.parentNode.appendChild(this); });
 
@@ -487,13 +535,46 @@ function mouseovered(d) {
 
 function mouseouted(d) {
 	link
-	.classed("link--highlight", false);
+	.classed("link--highlight", false)
+	.classed("link--hidden", false);
 		
 	  node
 	  .classed("node--highlight", false)
 	  .classed("node--hidden", false);
 	  
 	}
+
+function set_tooltip_text(d) {		
+	tooltip_text = "<span class=\"title\">"+d.name+"</span>";
+	tooltip_text += "<br />";
+	tooltip_text += "<table>";
+	tooltip_text += "<tr><td>Population:</td><td>" + format_text(accessor_population(d), "population")+"</td></tr>";
+	tooltip_text += "<tr><td>GDP:</td><td>" + format_text(accessor_gdp(d), "gdp");
+	tooltip_text += "<tr><td>Ø Life:</td><td>" + format_text(accessor_life_expectancy(d), "life_expectancy")+"</td></tr>";
+	tooltip_text += "</table>";
+	tooltip_text += "<br />";
+	tooltip_text += "<br />";
+
+	tooltip_text += "<span style=\"font-style: none;\">Top Export Partners:</span>";
+	tooltip_text += "<table class=\"top_partners\">";
+	accessor_selected_year_data(d).top_partners.forEach(function(p) {
+		var trade_link = 	graph.links.filter(function(l){ 
+				return (d.country_id == l.source.country_id && p.country_id == l.target.country_id)
+			})[0];
+
+		tooltip_text += "<tr><td>"+trade_link.target.name+"</td><td>" + format_text(trade_link.value, "gdp");
+	})
+	tooltip_text += "</table>";
+}
+
+function format_text(t, type) {
+	  switch (type) {
+		  case "gdp": return  d3.format(".1fixed")(t/1000000000) + " Bn";
+		  case "life_expectancy": return d3.format(".1fixed")(t) + " years";
+		  case "population": return d3.format(",")(t);
+		  default: return t;
+	  }
+}
 
 
 d3.select("input[value=\"nocolor\"]").on("click", function() {
@@ -513,10 +594,14 @@ d3.selectAll("input[name=\"group_by\"]").on("click", function(){
 	group_by = this.value; circular_layout_grouped(500);
 });
 
+d3.selectAll("input[name=\"detailed_tooltips\"]").on("click", function(){
+	detailed_tooltips = (this.value == 1);
+});
+
  d3.selectAll("input#slider-time").on("input",
   function() { 
 	selected_year = this.value;
-	circular_layout_grouped(0, true);
+	circular_layout_grouped(200, true);
  }); //no transition animation
 
 
@@ -529,27 +614,33 @@ link.enter().append("line")
     .style("stroke-width", function(d) { 
     return lineWidthScale(d.value)
     ; });*/
+var tooltip_text = "";
+
+	var tip = d3.tip()
+  .attr('class', 'd3-tip')
+  .offset([-10, 0])
+  .html(function(d,i) {
+	return tooltip_text;
+  })
+
+  svg.call(tip);
+
 
 var node = svg.selectAll(".node")
               .data(graph.nodes)
             .enter()
               .append("g").attr("class", "node")
-		      .on("mouseover", mouseovered)
-		      .on("mouseout", mouseouted);
-		    /*  // .on("mouseout", function(d) {
-		     // 	if(!this.clicked) {
-		      //		mouseouted(d);
-		      //	}
-		     // 	})
-		   //  .on("click", function(d) {
-				if (this.clicked) {
-					mouseouted(d);
-		      		mouseovered(d);
-		      	} else {
-		      		this.clicked = true;
-		      		mouseovered(d);
-		      	}
-		      } )*/;
+		      .on("mouseout", function(d) {
+		      	mouseouted(d);
+		      	tip.hide();
+		      	})
+			  .on('mouseover', function(d) {
+			  	mouseovered(d);
+			  	if (detailed_tooltips) {
+					set_tooltip_text(d);
+					tip.show(event.pageX, event.pageY);
+			  		}
+			  	 })
 
 node.append("circle")
     .attr("r", node_default_size)
@@ -560,6 +651,7 @@ node.append("text")
   .attr("x", 7)
   .attr("y", 3)
   .attr("class", "text")
+
 
 circular_layout_grouped(500, true);
 
