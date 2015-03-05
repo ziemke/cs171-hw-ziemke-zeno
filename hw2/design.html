@@ -172,7 +172,7 @@ var bundle = d3.layout.bundle();
 
 var line = d3.svg.line()
     .interpolate("bundle")
-    .tension(0.7)
+    .tension(0.3)
     .x(function(d) { 
     return d.x; })
 	.y(function(d) { 
