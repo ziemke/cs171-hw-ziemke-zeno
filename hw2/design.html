@@ -2,10 +2,17 @@
 <meta charset="utf-8">
 <title>Design Studio Implementation</title>
 	<style>
-	.link {
+	.link_group {
 		stroke: steelblue;
 		stroke-width: .8px;
-		opacity: 0.6;
+		opacity: 0.3;
+		fill: none;
+	}
+
+	.link_center {
+		stroke: grey;
+		stroke-width: .8px;
+		opacity: 0.1;
 		fill: none;
 	}
 	
@@ -33,30 +40,36 @@
 		opacity: 1;
 	}
 	
-	.link--highlight {
+	.link_group.link--highlight {
 	 	opacity: 1;
-		stroke: #000;
+		stroke: blue;
+	}
+
+	.link_center.link--highlight {
+	 	opacity: 0.6;
+		stroke: black;
 	}
 
 </style>
 <body>
 <script src="http://d3js.org/d3.v3.min.js"></script>
 <pre>
-- show labels so that they dont overlap
-- drawing of links / effect
-- bundeling
+- links transitions
 - show gdp/life_expectancy, etc. value
 - show title of group inside of circles
-- link transition in the beginning does not work
 - size color or both?
 - add layout that shows everything on a map
 - calculate gdp/capita
 - arrange continents according to geograpical position
-- make labels go around
 - change size of circles
+- toggle showing different things
+- use color
+- time selection
+
 
 - questions: which countries are close to this one (lines)
 - show data in bubble
+- make too small circles bigger
 
 - issues I had: outliniers -> log scale
 - show import/export
@@ -120,7 +133,7 @@ var fill = d3.scale.category10();
 
 var graph = {nodes: [], links: []};
 
-var continents = ["Africa", "Americas", "Asia", "Europe", "Oceania"]; // better performance than implementing some map/foreachs to get the continents automatically
+var continents = ["Asia", "Africa", "Oceania", "Americas", "Europe"]; // better performance than implementing some map/foreachs to get the continents automatically
 var groupScale = d3.scale.ordinal()
   .domain(continents)
   .rangePoints([-4,4], 0);
@@ -170,14 +183,21 @@ var cluster = d3.layout.cluster()
 
 var bundle = d3.layout.bundle();
 
-var line = d3.svg.line()
+var lineCenter = d3.svg.line()
+    .interpolate("bundle")
+    .tension(0.8)
+    .x(function(d) { 
+    return d.x; })
+	.y(function(d,i,g) { 
+	return d.y; });
+
+var lineGroup = d3.svg.line()
     .interpolate("bundle")
     .tension(0.3)
     .x(function(d) { 
     return d.x; })
-	.y(function(d) { 
-	return d.y; })
-
+	.y(function(d,i,g) { 
+	return d.y; });
 
 
 
@@ -186,6 +206,8 @@ var group_magnets = [];
 var center_magnet = {"x": width/2, "y": height/2, "name": "center_magnet"};
 
 function generateLinks() {
+
+	graph.links = [];
 	
 	if(group_magnets.length > 0) {
 		center_magnet["children"] = group_magnets;
@@ -221,13 +243,19 @@ function generateLinks() {
 		}
 	  })
 	})
+
+	lineWidthScale.domain(d3.extent(graph.links, function(l) { 
+return l.value; }))
+}
+
+function angle(d) {
+  return (d.startAngle + d.endAngle) * 90 / Math.PI;
 }
 
 
 
 var lineWidthScale = d3.scale.log()
-.domain(d3.extent(graph.links, function(l) { return l.value; }))
-.range([0.8, 4]);
+.range([0.4, 3.7]);
 
 
 function circular_layout() {
@@ -255,6 +283,8 @@ function circular_layout() {
     // Building the data object we are going to return
     d.data.x = arc.centroid(d)[0]+width/2;
     d.data.y = arc.centroid(d)[1]+height/2;
+
+    d.data.angle = angle(d);
 
     return d.data;
   })
@@ -348,6 +378,8 @@ function circular_layout_grouped() {
         d.data.x = arc.centroid(d)[0]+offset.x*3 + 400;
         d.data.y = arc.centroid(d)[1]+offset.y*3 + 400;
 
+        d.data.angle = angle(d);
+
         graph.nodes.push(d.data);
       });
     });
@@ -356,7 +388,6 @@ function circular_layout_grouped() {
   graph_update(500);
  
 }
-
 
 function category_color() {
 
@@ -403,8 +434,29 @@ link.exit().remove();
 
 link.enter().append("path")
 	.each(function(d) { d.source = d[0], d.target = d[d.length - 1]; })
-	.attr("class", "link")
-	.attr("d", line)
+	.style("stroke-width", function(d) { 
+    	 var link_value = 
+			graph.links.filter(function(l){ 
+				return (d[0].country_id == l.source.country_id && d[d.length-1].country_id == l.target.country_id)
+			})[0].value;
+			
+    	return lineWidthScale(link_value);
+    	}
+    );
+
+	
+link.filter(function(d) {
+		return (d[0].parent["name"] != d[d.length-1].parent["name"]);
+}).attr("d", lineCenter)
+.attr("class", "link_center");
+
+
+link.filter(function(d) {
+		return (d[0].parent["name"] == d[d.length-1].parent["name"]);
+}).attr("d", lineGroup)
+.attr("class", "link_group");
+
+
   //.exit()
 //	.remove();
 
@@ -419,14 +471,14 @@ link.enter().append("path")
         return "translate("+d.x+","+d.y+")"; 
       });
 
-  /*d3.selectAll(".text")
-	  .attr("transform", function(d) { 
-		 return "rotate(" + (d.x_label - 90) + ")translate(" + (d.y_label + 8) + ",0)" + (d.x_label < 180 ? "" : "rotate(180)"); })
-	    //return "rotate(" + (d.x_label - 90) + ")" + (d.x_label < 180 ? "" : "rotate(180)"); })
-	    //return d.x_label < 180 ? "" : "rotate(180)"; })
+	d3.selectAll(".text")
+	.transition().duration(duration)
+	  .attr("transform", function(d) { return "rotate(" + (d.angle - 90) + ")" +  ((d.angle>180)? "rotate(180)" : "")  })
 	  .style("text-anchor", function(d) { 
-	  return d.x_label < 180 ? "start" : "end"; });
-*/
+	  return (d.angle > 180 ? "end" : "start"); })
+	  .attr("dx", function(d) { return (d.angle > 180 ? -14 : 0); })
+	  .attr("title", function(d) {return d.angle});
+
 }
 
 function mouseovered(d) {
@@ -497,7 +549,8 @@ node.append("circle")
     .attr("r", node_default_size)
 
 node.append("text")
-  .text(function (d) { return d.name;})
+  .text(function (d) {
+  	 return d.name;})
   .attr("x", 7)
   .attr("y", 3)
   .attr("class", "text")
