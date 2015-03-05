@@ -48,7 +48,6 @@
 - show gdp/life_expectancy, etc. value
 - show title of group inside of circles
 - link transition in the beginning does not work
-- adjust circle size relative to number of items
 - size color or both?
 - add layout that shows everything on a map
 - calculate gdp/capita
@@ -61,7 +60,13 @@
 
 - issues I had: outliniers -> log scale
 - show import/export
+
 </pre>
+<!--
+
+done:
+- adjust circle size relative to number of items
+-->
   <form>
   Layout:
     <label><input type="radio" name="layout" value="circular1"> Circular 1</label>  
@@ -212,8 +217,6 @@ var lineWidthScale = d3.scale.log()
 
 
 function circular_layout() {
-  force.stop();
-
   var r = Math.min(height, width)/2;
 
   var arc = d3.svg.arc()
