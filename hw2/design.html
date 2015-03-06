@@ -179,6 +179,13 @@ var thresholds = {
 "gdp_capita": [10000, 100000]
 }
 
+var group_label_texts = {
+	"life_expectancy": "Life Expectancy", 
+	"gdp": "GDP",
+	"population": "Population",
+	"gdp_capita": "GDP per capita"
+}
+
 var svg = d3.select("body").append("svg")
             .attr("width", width)
             .attr("height", height);
@@ -359,7 +366,7 @@ function circular_layout_grouped(duration, update_links) {
   var arc = d3.svg.arc()
 //          .outerRadius(r);
 
-  var cats = (group_by == "continent") ? continents : ["Small " + group_by, "Middle " + group_by, "Large " + group_by]; 
+  var cats = (group_by == "continent") ? continents : ["Small " + group_label_texts[group_by], "Middle " + group_label_texts[group_by], "Large " + group_label_texts[group_by]]; 
  
 
   var pie_groups = d3.layout.pie()
@@ -573,8 +580,12 @@ function graph_update(duration) {
 	 	})
 	 	.attr("dy", function(d){ 
 	 	return label_position_y(d)})
-	 	.text(function(d){return d.name})
-
+	 	.text(function(d){
+	 		t =  d.name
+	 		if (group_by != "continent")
+				t +=  " (" + format_text(thresholds[group_by][0], group_by) + "-"+  format_text(thresholds[group_by][1], group_by) + ")"
+	 		return t; })
+			
 	 group_label.exit().remove();
 
 	 group_label	
@@ -594,7 +605,7 @@ function label_position_y(d) {
 
 	if (pos_y > height) 
 		pos_y = height-5;
-		
+
 	if (pos_y < 0) 
 		pos_y = 12;
 
