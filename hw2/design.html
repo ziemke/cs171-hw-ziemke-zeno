@@ -67,7 +67,7 @@
 	  color: #fff;
 	  border-radius: 2px;
 	  pointer-events: none;
-	 /* width: 130px;*/
+	  width: 120px;
 	  font-size: 12px;
 	}
 
@@ -93,9 +93,11 @@
 <script src="http://d3js.org/d3.v3.min.js"></script>
 <script src="d3.tip.v0.6.3.js"></script>
 <pre>
-- links transitions
+- links transitions dont work
+- label transition
+- laggy
+
 - show gdp/life_expectancy, etc. value
-- show title of group inside of circles
 - size color or both?
 - calculate gdp/capita
 - toggle showing different things
@@ -483,36 +485,43 @@ function node_size(field) {
 
 function graph_update(duration) {
 
-link.remove();
+	link = svg.selectAll("path")
+			  .data(bundle(graph.links))
 
-link = svg.selectAll(".link")
-          .data(bundle(graph.links))
-
-link.exit().remove();
-
-link.enter().append("path")
-	.each(function(d) { d.source = d[0], d.target = d[d.length - 1]; })
-	.style("stroke-width", function(d) { 
-    	 var link_value = 
-			graph.links.filter(function(l){ 
-				return (d[0].country_id == l.source.country_id && d[d.length-1].country_id == l.target.country_id)
-			})[0].value;
-			
-    	return lineWidthScale(link_value);
-    	}
-    );
-
-	
-link.filter(function(d) {
-		return (d[0].parent["name"] != d[d.length-1].parent["name"]);
-}).attr("d", lineCenter)
-.attr("class", "link_center");
+	link.enter().append("path").classed("link", true);
 
 
-link.filter(function(d) {
-		return (d[0].parent["name"] == d[d.length-1].parent["name"]);
-}).attr("d", lineGroup)
-.attr("class", "link_group");
+	link
+		.each(function(d) { d.source = d[0], d.target = d[d.length - 1]; })
+
+	link
+		.classed("link_center", false)
+		.classed("link_center", false);
+
+	link.filter(function(d) {
+			return (d[0].parent["name"] != d[d.length-1].parent["name"]);
+	}).attr("d", lineCenter)
+	.classed("link_center", true);
+
+
+	link.filter(function(d) {
+			return (d[0].parent["name"] == d[d.length-1].parent["name"]);
+	}).attr("d", lineGroup)
+	.classed("link_group", true);
+
+
+	link.style("stroke-width", function(d) { 
+			 var link_value = 
+				graph.links.filter(function(l){ 
+					return (d[0].country_id == l.source.country_id && d[d.length-1].country_id == l.target.country_id)
+				})[0].value;
+
+			return lineWidthScale(link_value);
+			}
+		);
+
+	link.exit().remove();
+
 
 
   node.transition().delay(duration).duration(duration)
