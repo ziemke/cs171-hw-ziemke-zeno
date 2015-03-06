@@ -94,7 +94,7 @@
     <label><input type="radio" name="group_by" value="continent"> Continent</label>
    <label><input type="radio" name="group_by" value="population" > Population</label>
     <label><input type="radio" name="group_by" value="gdp" checked> GDP</label>
-  <!--  <label><input type="radio" name="group_by" value="gdp_capita" > GDP per capita</label>-->
+    <!--<label><input type="radio" name="group_by" value="gdp_capita" > GDP per capita</label>-->
     <label><input type="radio" name="group_by" value="partners_proximity"> Ø Partner Proximity</label>
 	 </form>
   <form>
@@ -108,7 +108,7 @@
     <label><input type="radio" name="size" value="nosize" checked> None</label>
     <label><input type="radio" name="size" value="population" > Population</label>
     <label><input type="radio" name="size" value="gdp"> GDP</label>
-   <!-- <label><input type="radio" name="size" value="gdp_capita"> GDP per capita</label> -->
+    <!--<label><input type="radio" name="size" value="gdp_capita"> GDP per capita</label>-->
     <label><input type="radio" name="size" value="life_expectancy" > Life Expectancy</label>
    <label><input type="radio" name="size" value="partners_proximity" > Ø Partners Proximity</label>
   </form>
@@ -122,7 +122,7 @@
   Sort:
     <label><input type="radio" name="sort_by" value="population" checked> Population</label>
     <label><input type="radio" name="sort_by" value="gdp"> GDP</label>
-<!--    <label><input type="radio" name="sort_by" value="gdp_capita"> GDP per capita</label>-->
+ <!--  <label><input type="radio" name="sort_by" value="gdp_capita"> GDP per capita</label> -->
     <label><input type="radio" name="sort_by" value="life_expectancy" > Life Expectancy</label>
    <label><input type="radio" name="sort_by" value="partners_proximity" > Ø Partners Proximity</label>
   </form>
@@ -152,8 +152,15 @@ var thresholds = {
 "life_expectancy": [60.0510081300813, 75.2657479674797], 
 "gdp": [20863000000, 500000000000],
 "population": [20740726, 81678051],
-"gdp_capita": [10000, 100000],
-"partners_proximity": [500000, 1000000]
+"gdp_capita": [5000, 30000],
+}
+
+function gen_partners_proximity_quantiles() {
+	thresholds["partners_proximity"] =  d3.scale.quantile()
+		.range([0,1,2])
+		.domain(d3.extent(graph.nodes, function(l) {
+				return accessor_selected_year_data(l)["partners_proximity"]; 
+			 })).quantiles();
 }
 
 var group_label_texts = {
@@ -228,7 +235,7 @@ var accessor_partners_proximity = function(d) {
 var diameter = 960,
     radius = diameter / 2,
     innerRadius = radius - 120;
-    
+
 var bundle = d3.layout.bundle();
 
 var lineCenter = d3.svg.line()
@@ -252,6 +259,8 @@ updateYearsRange(data);
 
 
 graph.nodes = data;
+gen_partners_proximity_quantiles();
+
 var group_magnets = [];
 var center_magnet = {"x": width/2, "y": height/2, "name": "center_magnet"};
 
@@ -394,7 +403,7 @@ function circular_layout_grouped(duration, update_links) {
   var arc = d3.svg.arc()
 //          .outerRadius(r);
 
-  cats = (group_by == "continent") ? continents : ["Small " + group_label_texts[group_by], "Middle " + group_label_texts[group_by], "Large " + group_label_texts[group_by]]; 
+  cats = (group_by == "continent") ? continents : ["Low " + group_label_texts[group_by], "Middle " + group_label_texts[group_by], "High " + group_label_texts[group_by]]; 
  
 
   var pie_groups = d3.layout.pie()
@@ -422,7 +431,9 @@ function circular_layout_grouped(duration, update_links) {
           	return accessor_life_expectancy(a) - accessor_life_expectancy(b);
           else if (sort_by == "partners_proximity")
           	return accessor_partners_proximity(a) - accessor_partners_proximity(b);
-          else
+         else if (sort_by == "gdp_capita")
+          	return accessor_gdp_capita(a) - accessor_gdp_capita(b);
+         else
             return accessor_gdp(a) - accessor_gdp(b);
           }) // Sorting
           .value(function(d, i) { 
@@ -539,7 +550,7 @@ function node_size(field) {
 			var r_new = node_scale(accessor_selected_year_data(d)[field]); 
 			
 			if (!r_new)  {//for some reason sometimes the gdp is null in the dataset..
-				return node_scale.range[0];	
+				return node_scale.range()[0];	
 				console.log(d);	
 			}
 			else
@@ -550,6 +561,7 @@ function node_size(field) {
 }
 
 function graph_update(duration) {
+	gen_partners_proximity_quantiles();
 
 	svg.selectAll("path").remove(); // fix for d3 bug
 	
@@ -776,7 +788,8 @@ d3.select("input[value=\"nocolor\"]").on("click", function() {
 d3.selectAll("input[name=\"color\"]").on("click", function() { 
 node_color(this.value); })
 
-d3.selectAll("input[name=\"size\"]").on("click", function() { node_size(this.value); })
+d3.selectAll("input[name=\"size\"]").on("click", function() { 
+node_size(this.value); })
 
 
 d3.selectAll("input[name=\"sort_by\"]").on("click", function(){
