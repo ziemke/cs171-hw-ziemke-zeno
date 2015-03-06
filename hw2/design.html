@@ -562,7 +562,7 @@ function node_size(field) {
 }
 
 function graph_update(duration) {
-	gen_partners_proximity_quantiles();
+	//gen_partners_proximity_quantiles();
 
 	svg.selectAll("path").remove(); // fix for d3 bug
 	
@@ -651,11 +651,12 @@ function graph_update(duration) {
 		.classed("group_label", true);
 
 	group_label
-		//.transition().duration(duration)
+		.transition().duration(2*duration)
 		.style("opacity", 0)
 
 
 	 group_label
+	 	.transition().delay(2*duration).duration(0)
 	 	.attr("dx", function(d){ return d.x;
 	 	})
 	 	.attr("dy", function(d){ 
@@ -691,7 +692,7 @@ function label_position_y(d) {
 	if (pos_y > height) 
 		pos_y = height-5;
 
-	if (pos_y < 0) 
+	if (pos_y < 12) 
 		pos_y = 12;
 
 
@@ -805,10 +806,10 @@ d3.selectAll("input[name=\"detailed_tooltips\"]").on("click", function(){
 	detailed_tooltips = (this.value == 1);
 });
 
- d3.selectAll("input#slider-time").on("input",
+ d3.selectAll("input#slider-time").on("change",
   function() { 
 	selected_year = this.value;
-	circular_layout_grouped(0, true);
+	circular_layout_grouped(500, true);
  }); //no transition animation
 
 
