@@ -5,14 +5,12 @@
 	.link_group {
 		stroke: steelblue;
 		stroke-width: .8px;
-		opacity: 0.3;
 		fill: none;
 	}
 
 	.link_center {
 		stroke: grey;
 		stroke-width: .8px;
-		opacity: 0.1;
 		fill: none;
 	}
 
@@ -96,6 +94,7 @@
 - links transitions dont work
 - label transition
 - laggy
+- only fade group labels when necessary
 
 - show gdp/life_expectancy, etc. value
 - size color or both?
@@ -121,7 +120,7 @@ done:
     <label><input type="radio" name="group_by" value="continent"> Continent</label>
     <label><input type="radio" name="group_by" value="population" > Population</label>
     <label><input type="radio" name="group_by" value="gdp" checked> GDP</label>
-    <label><input type="radio" name="group_by" value="gdp_capita" > GDP per capita</label>
+  <!--  <label><input type="radio" name="group_by" value="gdp_capita" > GDP per capita</label>-->
     <label><input type="radio" name="group_by" value="life_expectancy"> Life Expectancy</label>
  </form>
   <form>
@@ -135,7 +134,7 @@ done:
     <label><input type="radio" name="size" value="nosize" checked> None</label>
     <label><input type="radio" name="size" value="population" > Population</label>
     <label><input type="radio" name="size" value="gdp"> GDP</label>
-    <label><input type="radio" name="size" value="gdp_capita"> GDP per capita</label>
+   <!-- <label><input type="radio" name="size" value="gdp_capita"> GDP per capita</label> -->
     <label><input type="radio" name="size" value="life_expectancy" > Life Expectancy</label>
   </form>
 <!--  <form>
@@ -148,7 +147,7 @@ done:
   Sort:
     <label><input type="radio" name="sort_by" value="population" checked> Population</label>
     <label><input type="radio" name="sort_by" value="gdp"> GDP</label>
-    <label><input type="radio" name="sort_by" value="gdp_capita"> GDP per capita</label>
+<!--    <label><input type="radio" name="sort_by" value="gdp_capita"> GDP per capita</label>-->
     <label><input type="radio" name="sort_by" value="life_expectancy" > Life Expectancy</label>
   </form>
 
@@ -510,24 +509,44 @@ function node_size(field) {
 
 function graph_update(duration) {
 
+	svg.selectAll("path").remove(); // fix for d3 bug
+	
 	link = svg.selectAll("path")
 			  .data(bundle(graph.links))
 
-	link.enter().append("path").classed("link", true);
-
-
-	link
-		.each(function(d) { d.source = d[0], d.target = d[d.length - 1]; })
+	link.enter().append("path").classed("link", true).style("opacity", 0);
 
 	link
 		.classed("link_center", false)
 		.classed("link_center", false);
+	
+	link
+		.each(function(d) { d.source = d[0], d.target = d[d.length - 1]; })
 
-	link.filter(function(d) {
-			return (d[0].parent["name"] != d[d.length-1].parent["name"]);
-	}).attr("d", lineCenter)
-	.classed("link_center", true);
 
+	var center_links = 
+		link.filter(function(d) {
+				return (d[0].parent["name"] != d[d.length-1].parent["name"]);
+		}).classed("link_center", true);
+		
+	var group_links =
+		link.filter(function(d) {
+			return (d[0].parent["name"] == d[d.length-1].parent["name"]);
+		}).classed("link_group", true);
+	
+	center_links.style("opacity", 0)
+		.attr("d", lineCenter);
+
+	group_links.style("opacity", 0)
+		.attr("d", lineGroup);
+	
+	center_links
+		.transition().delay(3*duration).duration(duration)
+		.style("opacity", 0.1);
+	group_links
+		.transition().delay(4*duration).duration(duration)
+		.style("opacity", 0.3);
+	
 
 	link.filter(function(d) {
 			return (d[0].parent["name"] == d[d.length-1].parent["name"]);
@@ -554,13 +573,23 @@ function graph_update(duration) {
         return "translate("+d.x+","+d.y+")"; 
       });
 
+     d3.selectAll(".text")
+	.transition().duration(duration)
+	
+	 .attr("transform", function(d) { return "rotate(0)"});
+	
+
 	d3.selectAll(".text")
 	.transition().delay(duration).duration(duration)
-	  .attr("transform", function(d) { return "rotate(" + (d.angle - 90) + ")" +  ((d.angle>180)? "rotate(180)" : "")  })
 	  .style("text-anchor", function(d) { 
 	  return (d.angle > 180 ? "end" : "start"); })
 	  .attr("dx", function(d) { return (d.angle > 180 ? -14 : 0); })
-	  .attr("title", function(d) {return d.angle});
+
+	d3.selectAll(".text")
+	.transition().delay(2*duration).duration(duration)
+	  .attr("transform", function(d) {
+	 	var ang = (d.angle - 90 + (d.angle>180? 180: 0));
+	 	 return "rotate(" + ang + ")"; })
 	 
 	var group_label = svg.selectAll(".group_label").data(group_magnets)
 
@@ -571,7 +600,7 @@ function graph_update(duration) {
 		.classed("group_label", true);
 
 	group_label
-		.transition().duration(duration)
+		//.transition().duration(duration)
 		.style("opacity", 0)
 
 
@@ -583,13 +612,13 @@ function graph_update(duration) {
 	 	.text(function(d){
 	 		t =  d.name
 	 		if (group_by != "continent")
-				t +=  " (" + format_text(thresholds[group_by][0], group_by) + "-"+  format_text(thresholds[group_by][1], group_by) + ")"
+				t +=  " (" + format_text(thresholds[group_by][0], group_by) + "–"+  format_text(thresholds[group_by][1], group_by) + ")"
 	 		return t; })
 			
 	 group_label.exit().remove();
 
 	 group_label	
-		.transition().delay(duration-100).duration(2*duration)
+		.transition().delay(5*duration).duration(2*duration)
 		.style("opacity", 1)
 	 	
 	 	
@@ -702,7 +731,7 @@ d3.selectAll("input[name=\"detailed_tooltips\"]").on("click", function(){
  d3.selectAll("input#slider-time").on("input",
   function() { 
 	selected_year = this.value;
-	circular_layout_grouped(200, true);
+	circular_layout_grouped(0, true);
  }); //no transition animation
 
 
