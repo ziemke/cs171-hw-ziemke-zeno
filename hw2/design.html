@@ -4,13 +4,11 @@
 	<style>
 	.link_group {
 		stroke: steelblue;
-		stroke-width: .8px;
 		fill: none;
 	}
 
 	.link_center {
 		stroke: grey;
-		stroke-width: .8px;
 		fill: none;
 	}
 
@@ -91,23 +89,13 @@
 <script src="http://d3js.org/d3.v3.min.js"></script>
 <script src="d3.tip.v0.6.3.js"></script>
 <pre>
-- links transitions dont work
-- label transition
-- laggy
-- only fade group labels when necessary
-
-- show gdp/life_expectancy, etc. value
 - size color or both?
-- calculate gdp/capita
-- toggle showing different things
+
 - top partners average trade proximity
 
 
 - questions: which countries are close to this one (lines)
-- make too small circles bigger
 
-- issues I had: outliniers -> log scale
-- show import/export
 
 </pre>
 <!--
@@ -483,7 +471,18 @@ var color =  d3.scale.linear()
                         });
 }
 
+function get_center_links() {
+	return link.filter(function(d) {
+				return (d[0].parent["name"] != d[d.length-1].parent["name"]);
+		});
+}
 
+
+function get_group_links() {
+	return link.filter(function(d) {
+			return (d[0].parent["name"] == d[d.length-1].parent["name"]);
+		});
+}
 function node_size(field) {
 	if (field == "nosize")
   		d3.selectAll("circle").transition().duration(500).attr("r", node_default_size);
@@ -524,15 +523,11 @@ function graph_update(duration) {
 		.each(function(d) { d.source = d[0], d.target = d[d.length - 1]; })
 
 
-	var center_links = 
-		link.filter(function(d) {
-				return (d[0].parent["name"] != d[d.length-1].parent["name"]);
-		}).classed("link_center", true);
+	var center_links = get_center_links()
+		.classed("link_center", true);
 		
-	var group_links =
-		link.filter(function(d) {
-			return (d[0].parent["name"] == d[d.length-1].parent["name"]);
-		}).classed("link_group", true);
+	var group_links = get_group_links()
+		.classed("link_group", true);
 	
 	center_links.style("opacity", 0)
 		.attr("d", lineCenter);
@@ -650,6 +645,7 @@ function mouseovered(d) {
   link
   .classed("link--highlight", function(l) { if (l.source === d) return l.target.partner = true; })
   .classed("link--hidden", function(l) { return l.source !== d; })
+  .attr("style", function(l) { if (l.source === d) return false; })
    
     .filter(function(l) { return l.source === d; })
       .each(function() { this.parentNode.appendChild(this); });
@@ -658,16 +654,33 @@ function mouseovered(d) {
   	.classed("node--hidden", function(n) { return !(n.partner || n === d); })
   
    d3.selectAll(".node").each(function() { this.parentNode.appendChild(this); });
+	
+	link.style("stroke-width", function(d) { 
+			 var link_value = 
+				graph.links.filter(function(l){ 
+					return (d[0].country_id == l.source.country_id && d[d.length-1].country_id == l.target.country_id)
+				})[0].value;
+
+			return lineWidthScale(link_value);
+			}
+		);
 }
 
 function mouseouted(d) {
 	link
 	.classed("link--highlight", false)
 	.classed("link--hidden", false);
-		
+
 	  node
 	  .classed("node--highlight", false)
 	  .classed("node--hidden", false);
+
+	  get_center_links()
+	  	.style("opacity", 0.1);
+	  
+	  get_group_links()
+	  	.style("opacity", 0.3);	
+
 	  
 	}
 
