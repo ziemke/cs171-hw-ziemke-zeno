@@ -63,7 +63,7 @@
 	  color: #fff;
 	  border-radius: 2px;
 	  pointer-events: none;
-	  width: 150px;
+	  width: 155px;
 	  font-size: 12px;
 	}
 
@@ -88,29 +88,15 @@
 
 <script src="http://d3js.org/d3.v3.min.js"></script>
 <script src="d3.tip.v0.6.3.js"></script>
-<pre>
-- size color or both?
 
-- top partners average trade proximity
-
-
-- questions: which countries are close to this one (lines)
-
-
-</pre>
-<!--
-
-done:
-- adjust circle size relative to number of items
--->
 <form>
   Group by:
     <label><input type="radio" name="group_by" value="continent"> Continent</label>
-    <label><input type="radio" name="group_by" value="population" > Population</label>
+   <label><input type="radio" name="group_by" value="population" > Population</label>
     <label><input type="radio" name="group_by" value="gdp" checked> GDP</label>
   <!--  <label><input type="radio" name="group_by" value="gdp_capita" > GDP per capita</label>-->
-    <label><input type="radio" name="group_by" value="life_expectancy"> Life Expectancy</label>
- </form>
+    <label><input type="radio" name="group_by" value="partners_proximity"> Ø Partner Proximity</label>
+	 </form>
   <form>
   <form>
  <!-- Color:
@@ -124,6 +110,7 @@ done:
     <label><input type="radio" name="size" value="gdp"> GDP</label>
    <!-- <label><input type="radio" name="size" value="gdp_capita"> GDP per capita</label> -->
     <label><input type="radio" name="size" value="life_expectancy" > Life Expectancy</label>
+   <label><input type="radio" name="size" value="partners_proximity" > Ø Partners Proximity</label>
   </form>
 <!--  <form>
    Color:
@@ -137,6 +124,7 @@ done:
     <label><input type="radio" name="sort_by" value="gdp"> GDP</label>
 <!--    <label><input type="radio" name="sort_by" value="gdp_capita"> GDP per capita</label>-->
     <label><input type="radio" name="sort_by" value="life_expectancy" > Life Expectancy</label>
+   <label><input type="radio" name="sort_by" value="partners_proximity" > Ø Partners Proximity</label>
   </form>
 
   <form>
@@ -154,6 +142,7 @@ done:
 d3.json("data/countries_1995_2012.json", function(data) {
 
 calculate_gdp_capita(data);
+calculate_partners_proximity(data);
 
 var margin = {top: 10, bottom: 10, left: 10, right: 60};
 var width = 1200 - margin.left - margin.right;
@@ -163,14 +152,16 @@ var thresholds = {
 "life_expectancy": [60.0510081300813, 75.2657479674797], 
 "gdp": [20863000000, 500000000000],
 "population": [20740726, 81678051],
-"gdp_capita": [10000, 100000]
+"gdp_capita": [10000, 100000],
+"partners_proximity": [500000, 1000000]
 }
 
 var group_label_texts = {
 	"life_expectancy": "Life Expectancy", 
 	"gdp": "GDP",
 	"population": "Population",
-	"gdp_capita": "GDP per capita"
+	"gdp_capita": "GDP per capita",
+	"partners_proximity": "Ø Partner Proximity"
 }
 
 var svg = d3.select("body").append("svg")
@@ -225,18 +216,19 @@ var accessor_life_expectancy = function(d) {
 }
 
 
+var accessor_partners_proximity = function(d) {
+  return accessor_selected_year_data(d).partners_proximity;
+}
+
+
+
 
 // line drawing setup
 
 var diameter = 960,
     radius = diameter / 2,
     innerRadius = radius - 120;
-
-var cluster = d3.layout.cluster()
-    .size([360, innerRadius])
-    .sort(null)
-    .value(function(d) { return d.size; });
-
+    
 var bundle = d3.layout.bundle();
 
 var lineCenter = d3.svg.line()
@@ -334,6 +326,7 @@ function updateYearsRange(input_data) {
 	  .attr("min", range["minimum"])
 	  .attr("max", range["maximum"]);			
   }
+
 function calculate_gdp_capita(d) {
 	d.forEach(function(l){
 		l.years.forEach(function(m) {
@@ -343,9 +336,57 @@ function calculate_gdp_capita(d) {
 		
 }
 
+function get_country_by_id(i, da) {
+	return da.filter(function(c){
+		return c.country_id == i;
+	})[0];
+}
+
+function calculate_partners_proximity(d) {
+	d.forEach(function(l){
+		 var lat_1 = l.latitude;
+		 var lon_1 = l.longitude;
+		 var sum = 0;
+		 var count = 0;
+		l.years.forEach(function(m) {
+			m.top_partners.forEach(function(n) {
+				var partner = get_country_by_id(n.country_id, d);
+				if (partner) {
+					n.proximity = getDistanceFromLatLonInKm(lat_1, lon_1, partner.latitude, partner.longitude);
+					sum += n.proximity;
+					count +=1;
+				}
+			});
+			m.partners_proximity = sum;
+		});
+
+	}); 
+		
+}
+
+http://stackoverflow.com/questions/27928/how-do-i-calculate-distance-between-two-latitude-longitude-points
+function getDistanceFromLatLonInKm(lat1,lon1,lat2,lon2) {
+  var R = 6371; // Radius of the earth in km
+  var dLat = deg2rad(lat2-lat1);  // deg2rad below
+  var dLon = deg2rad(lon2-lon1); 
+  var a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2)
+    ; 
+  var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+  var d = R * c; // Distance in km
+  return d;
+}
+
+function deg2rad(deg) {
+  return deg * (Math.PI/180)
+}
 var lineWidthScale = d3.scale.log()
 .range([0.4, 3.7]);
 
+var catScale = [];
+var cats = [];
 var groups = {};
 function circular_layout_grouped(duration, update_links) {
   var r = Math.min(height, width)/5.5;
@@ -353,7 +394,7 @@ function circular_layout_grouped(duration, update_links) {
   var arc = d3.svg.arc()
 //          .outerRadius(r);
 
-  var cats = (group_by == "continent") ? continents : ["Small " + group_label_texts[group_by], "Middle " + group_label_texts[group_by], "Large " + group_label_texts[group_by]]; 
+  cats = (group_by == "continent") ? continents : ["Small " + group_label_texts[group_by], "Middle " + group_label_texts[group_by], "Large " + group_label_texts[group_by]]; 
  
 
   var pie_groups = d3.layout.pie()
@@ -379,6 +420,8 @@ function circular_layout_grouped(duration, update_links) {
             return accessor_population(a) - accessor_population(b);
           else if (sort_by == "life_expectancy")
           	return accessor_life_expectancy(a) - accessor_life_expectancy(b);
+          else if (sort_by == "partners_proximity")
+          	return accessor_partners_proximity(a) - accessor_partners_proximity(b);
           else
             return accessor_gdp(a) - accessor_gdp(b);
           }) // Sorting
@@ -386,7 +429,7 @@ function circular_layout_grouped(duration, update_links) {
             return 1;  // We want an equal pie share/slice for each point
           });
 
-  var catScale = d3.scale.threshold()
+  catScale = d3.scale.threshold()
 			.domain(thresholds[group_by])
 			.range(cats);
 
@@ -606,9 +649,14 @@ function graph_update(duration) {
 	 	return label_position_y(d)})
 	 	.text(function(d){
 	 		t =  d.name
-	 		if (group_by != "continent")
-				t +=  " (" + format_text(thresholds[group_by][0], group_by) + "–"+  format_text(thresholds[group_by][1], group_by) + ")"
-	 		return t; })
+	 		if (group_by != "continent") {
+	 			var domain = d3.extent(d.children, function(l) {
+					return accessor_selected_year_data(l)[group_by]; 
+				 })
+	 			t +=  " (" + format_text(domain[0], group_by) + "–"+  format_text(domain[1], group_by) + ")"
+	 			
+	 		}
+			return t; })
 			
 	 group_label.exit().remove();
 
@@ -690,8 +738,9 @@ function set_tooltip_text(d) {
 	tooltip_text += "<table>";
 	tooltip_text += "<tr><td>Population:</td><td>" + format_text(accessor_population(d), "population")+"</td></tr>";
 	tooltip_text += "<tr><td>GDP:</td><td>" + format_text(accessor_gdp(d), "gdp");
-	tooltip_text += "<tr><td>GDP/capita:</td><td>" + format_text(accessor_gdp_capita(d), "gdp_capita");
-	tooltip_text += "<tr><td>Ø Life:</td><td>" + format_text(accessor_life_expectancy(d), "life_expectancy")+"</td></tr>";
+	tooltip_text += "<tr><td>GDP per capita:</td><td>" + format_text(accessor_gdp_capita(d), "gdp_capita");
+	tooltip_text += "<tr><td>Life Expectancy:</td><td>" + format_text(accessor_life_expectancy(d), "life_expectancy")+"</td></tr>";
+	tooltip_text += "<tr><td>Ø Proximity:</td><td>" + format_text(accessor_partners_proximity(d), "partners_proximity")+"</td></tr>";
 	tooltip_text += "</table>";
 	tooltip_text += "<br />";
 	tooltip_text += "<br />";
@@ -713,7 +762,8 @@ function format_text(t, type) {
 		  case "gdp": return  "$"+d3.format(".1fixed")(t/1000000000) + " Bn";
 		  case "gdp_capita": return  "$"+d3.format(",")(d3.round(t));
 		  case "life_expectancy": return d3.format(".1fixed")(t) + " years";
-		  case "population": return d3.format(",")(t);
+		  case "population": return d3.format(",.1fixed")(t/1000/1000)+" M";
+		  case "partners_proximity": return d3.format(",")(d3.round(t)) + " km";
 		  default: return t;
 	  }
 }
