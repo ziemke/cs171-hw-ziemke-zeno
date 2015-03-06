@@ -67,7 +67,7 @@
 	  color: #fff;
 	  border-radius: 2px;
 	  pointer-events: none;
-	  width: 120px;
+	  width: 140px;
 	  font-size: 12px;
 	}
 
@@ -254,6 +254,8 @@ var lineGroup = d3.svg.line()
 
 updateYearsRange(data);
 
+calculate_gdp_capita(data);
+
 graph.nodes = data;
 var group_magnets = [];
 var center_magnet = {"x": width/2, "y": height/2, "name": "center_magnet"};
@@ -329,7 +331,9 @@ function updateYearsRange(input_data) {
 	  .attr("min", range["minimum"])
 	  .attr("max", range["maximum"]);			
   }
-
+function calculate_gdp_capita(d) {
+	d.forEach
+}
 
 var lineWidthScale = d3.scale.log()
 .range([0.4, 3.7]);
