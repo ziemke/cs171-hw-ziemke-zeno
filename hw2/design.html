@@ -67,7 +67,7 @@
 	  color: #fff;
 	  border-radius: 2px;
 	  pointer-events: none;
-	  width: 140px;
+	  width: 150px;
 	  font-size: 12px;
 	}
 
@@ -121,6 +121,7 @@ done:
     <label><input type="radio" name="group_by" value="continent"> Continent</label>
     <label><input type="radio" name="group_by" value="population" > Population</label>
     <label><input type="radio" name="group_by" value="gdp" checked> GDP</label>
+    <label><input type="radio" name="group_by" value="gdp_capita" > GDP per capita</label>
     <label><input type="radio" name="group_by" value="life_expectancy"> Life Expectancy</label>
  </form>
   <form>
@@ -134,6 +135,7 @@ done:
     <label><input type="radio" name="size" value="nosize" checked> None</label>
     <label><input type="radio" name="size" value="population" > Population</label>
     <label><input type="radio" name="size" value="gdp"> GDP</label>
+    <label><input type="radio" name="size" value="gdp_capita"> GDP per capita</label>
     <label><input type="radio" name="size" value="life_expectancy" > Life Expectancy</label>
   </form>
 <!--  <form>
@@ -146,6 +148,7 @@ done:
   Sort:
     <label><input type="radio" name="sort_by" value="population" checked> Population</label>
     <label><input type="radio" name="sort_by" value="gdp"> GDP</label>
+    <label><input type="radio" name="sort_by" value="gdp_capita"> GDP per capita</label>
     <label><input type="radio" name="sort_by" value="life_expectancy" > Life Expectancy</label>
   </form>
 
@@ -163,6 +166,8 @@ done:
 
 d3.json("data/countries_1995_2012.json", function(data) {
 
+calculate_gdp_capita(data);
+
 var margin = {top: 10, bottom: 10, left: 10, right: 60};
 var width = 1200 - margin.left - margin.right;
 var height = 900 - margin.top - margin.bottom;
@@ -171,6 +176,7 @@ var thresholds = {
 "life_expectancy": [60.0510081300813, 75.2657479674797], 
 "gdp": [20863000000, 500000000000],
 "population": [20740726, 81678051],
+"gdp_capita": [10000, 100000]
 }
 
 var svg = d3.select("body").append("svg")
@@ -216,6 +222,10 @@ var accessor_gdp = function(d) {
   return accessor_selected_year_data(d).gdp;
 }
 
+var accessor_gdp_capita = function(d) {
+  return accessor_selected_year_data(d).gdp_capita;
+}
+
 var accessor_life_expectancy = function(d) {
   return accessor_selected_year_data(d).life_expectancy;
 }
@@ -254,7 +264,6 @@ var lineGroup = d3.svg.line()
 
 updateYearsRange(data);
 
-calculate_gdp_capita(data);
 
 graph.nodes = data;
 var group_magnets = [];
@@ -332,7 +341,12 @@ function updateYearsRange(input_data) {
 	  .attr("max", range["maximum"]);			
   }
 function calculate_gdp_capita(d) {
-	d.forEach
+	d.forEach(function(l){
+		l.years.forEach(function(m) {
+			m.gdp_capita = m.gdp / m.population;
+		})
+	}); 
+		
 }
 
 var lineWidthScale = d3.scale.log()
@@ -578,7 +592,14 @@ function label_position_y(d) {
 
 	var pos_y = (d.y + ((d.y > center_magnet.y) ? d.radius : -d.radius));
 
-	return pos_y > height ? height-5 : pos_y;
+	if (pos_y > height) 
+		pos_y = height-5;
+		
+	if (pos_y < 0) 
+		pos_y = 12;
+
+
+	return pos_y;
 }
 
 
@@ -616,6 +637,7 @@ function set_tooltip_text(d) {
 	tooltip_text += "<table>";
 	tooltip_text += "<tr><td>Population:</td><td>" + format_text(accessor_population(d), "population")+"</td></tr>";
 	tooltip_text += "<tr><td>GDP:</td><td>" + format_text(accessor_gdp(d), "gdp");
+	tooltip_text += "<tr><td>GDP/capita:</td><td>" + format_text(accessor_gdp_capita(d), "gdp_capita");
 	tooltip_text += "<tr><td>Ø Life:</td><td>" + format_text(accessor_life_expectancy(d), "life_expectancy")+"</td></tr>";
 	tooltip_text += "</table>";
 	tooltip_text += "<br />";
@@ -635,7 +657,8 @@ function set_tooltip_text(d) {
 
 function format_text(t, type) {
 	  switch (type) {
-		  case "gdp": return  d3.format(".1fixed")(t/1000000000) + " Bn";
+		  case "gdp": return  "$"+d3.format(".1fixed")(t/1000000000) + " Bn";
+		  case "gdp_capita": return  "$"+d3.format(",")(d3.round(t));
 		  case "life_expectancy": return d3.format(".1fixed")(t) + " years";
 		  case "population": return d3.format(",")(t);
 		  default: return t;
