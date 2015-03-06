@@ -153,6 +153,7 @@ var thresholds = {
 "gdp": [20863000000, 500000000000],
 "population": [20740726, 81678051],
 "gdp_capita": [5000, 30000],
+"partners_proximity": [500000, 1000000]
 }
 
 function gen_partners_proximity_quantiles() {
@@ -259,7 +260,7 @@ updateYearsRange(data);
 
 
 graph.nodes = data;
-gen_partners_proximity_quantiles();
+//gen_partners_proximity_quantiles();
 
 var group_magnets = [];
 var center_magnet = {"x": width/2, "y": height/2, "name": "center_magnet"};
