@@ -30,3 +30,5 @@ It is intended for policy makers, who want to get an understanding for how the s
 There is an issue, that parts of the visualiazation can be cut of, when its too big. I fixed this for the group labels, by placing them at the upper most/lower most position if they are out of bounds. But after spending more than 60h on this problemset I unfortuantely did not have time to fix this issue for the circles.
 
 I also wanted to implement an option where you could click on a country, the highlighting of this country and its tradelinks would stay until you click somewhere else. Combined with x/y transitions for the trading links, this would have made it even easier to analyze how trade relationship for a specific country change over time.
+
+Pictures of the process of implementing the homework can be found in the /design/ folder together with an alternative design.
