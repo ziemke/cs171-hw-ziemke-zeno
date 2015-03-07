@@ -62,8 +62,8 @@
 
   <form id="sort_by_scatterplot" style="display:none">
   Sort:
-    <label><input type="radio" name="sort_by_scatterplot" value="population_gdp" checked> Population and GDP</label>
-    <label><input type="radio" name="sort_by_scatterplot" value="longitude_latitude" > Longitude and Latitude</label>
+    <label><input type="radio" name="sort_by_scatterplot" value="gdp_population" checked> Population and GDP</label>
+    <label><input type="radio" name="sort_by_scatterplot" value="latitude_longitude" > Longitude and Latitude</label>
   </form>
 
   
@@ -114,14 +114,14 @@ var accesor_sort_field = function(d) {
 }
 
 var accesor_sort_field_scatterplot_x = function(d) {
-	if (sort_by_scatterplot[1] == "latitude")
+	if (sort_by_scatterplot[1] == "longitude")
 		return d[sort_by_scatterplot[1]];
 	else
   		return accessor_selected_year_data(d)[sort_by_scatterplot[1]];
 }
 
 var accesor_sort_field_scatterplot_y = function(d) {
-	if (sort_by_scatterplot[0] == "longitude")
+	if (sort_by_scatterplot[0] == "latitude")
 		return d[sort_by_scatterplot[0]];
 	else
   		return accessor_selected_year_data(d)[sort_by_scatterplot[0]];
@@ -401,7 +401,7 @@ function scatterplot_layout() {
 
 	var yScale = d3.scale.linear()
 	.domain(d3.extent(data, accesor_sort_field_scatterplot_y))
-	.range([0, 600]);  
+	.range([600, 0]);  
 
 	var xScale = d3.scale.linear()
 	.domain(d3.extent(data, accesor_sort_field_scatterplot_x))
