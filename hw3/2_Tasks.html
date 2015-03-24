@@ -8,6 +8,7 @@
     <script src="libs/d3/d3.min.js" charset="utf-8"></script>
     <script src="libs/jquery/jquery-2.1.1.min.js" charset="utf-8"></script>
     <script src="libs/bootstrap/js/bootstrap.min.js" charset="utf-8"></script>
+	<script src="http://d3js.org/queue.v1.min.js"></script>
 
     <script src="http://hs8.de/cs171_tests/tester.js"></script>
 
@@ -50,16 +51,15 @@
 
 <script>
 
-    $(function () {
+	$(function () {
         var allData = [];
-        var metaData = {};
-
+	    var metaData = {};
         var dateFormatter = d3.time.format("%Y-%m-%d");
 
 
         var aggregateCountsForRange = function(from, to){
 
-            var count = 0;
+            var count = d3.sum(allData.filter(function(d){return d.time>=from && d.time<=to;}), function(d){return d.count;});
 
             // TODO: TASK 2 B -- count here for the given time range
             // you might make use of the map and filter functions
@@ -76,6 +76,8 @@
             // this function checks if your count is correct
             // you need an active internet connection for this to work
             cs171Test.checkCount(count);
+			
+			return count;
 
 
         }
@@ -109,19 +111,17 @@
 
 
         // TODO: TASK 2 A -- implement your data loading here and then call "allLoaded(perDayData, metaData)"
-
-
-
-
-
-
-
-    })
-
-
-
-
-
+		queue()
+		.defer(d3.json, 'data/perDayData.json') 
+		.defer(d3.json, 'data/MYWorld_fields.json') 
+		    .await(function(error, perDayData, metaData) {
+		    
+				allLoaded(perDayData, metaData)
+			
+		    }
+		);
+		
+	})
 </script>
 
 

@@ -8,6 +8,7 @@
     <script src="libs/d3/d3.min.js" charset="utf-8"></script>
     <script src="libs/jquery/jquery-2.1.1.min.js" charset="utf-8"></script>
     <script src="libs/bootstrap/js/bootstrap.min.js" charset="utf-8"></script>
+	<script src="http://d3js.org/queue.v1.min.js" charset="utf-8"></script>
 
 
     <!--Stylesheets-->
@@ -60,7 +61,6 @@
             <div class="col-md-9" id="countVis">
                 <!-- TODO: delete placeholder svg element -->
                 <svg width="650" height="330" style="background-color: lightblue">
-                    <text x="50" y="50">HERE should be CountVis</text>
                 </svg>
             </div>
             <div class="col-md-3" id="ageVis">
@@ -117,13 +117,14 @@
 
 
                 //TODO: Instantiate all Vis Objects here
-
+				var count_vis = new CountVis(d3.select("#countVis"), allData, metaData, MyEventHandler);
 
                 // TODO: bind the eventHandler to the Vis Objects
                 // events will be created from the CountVis object (nothing to do here)
                 // events will be consumed by the PrioVis and AgeVis object (binding should happen here)
 
             }
+
 
             // call this function after both files are loaded -- error should be "null" if no error
             var dataLoaded = function (error, _allData, _metaData) {
@@ -175,12 +176,25 @@
                     initVis();
                 }
             }
+			
+			
+			// HELPERS 
+			
+			 var aggregateCountsForRange = function(from, to){
+				 return d3.sum(allData.filter(function(d){return d.time>=from && d.time<=to;}), function(d){return d.count;})
+        	}
 
             var startHere = function(){
 
                 //TODO: load data here and call "dataLoaded" afterwards
                 // Hint: http://giscollective.org/d3-queue-js/
 
+				queue()
+				.defer(d3.json, 'data/perDayData.json') 
+				.defer(d3.json, 'data/MYWorld_fields.json') 
+				.await(dataLoaded);
+				
+				
                 // bind reset zoom button to a function (-- ONLY FOR BONUS --)
                 d3.select("#fitInBtn").on("click", function() {
                     // TODO: -- ONLY FOR BONUS --
