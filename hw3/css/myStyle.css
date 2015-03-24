@@ -24,3 +24,12 @@ body{
     fill-opacity: .5;
     pointer-events: none;
 }
+
+body {
+  font: 10px sans-serif;
+}
+
+
+.area {
+  fill: black;
+}
