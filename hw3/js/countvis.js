@@ -29,7 +29,7 @@ CountVis = function(_parentElement, _data, _metaData, _eventHandler){
 
     // TODO: define all "constants" here
 
-    this.margin = {top: 20, right: 0, bottom: 30, left: 80},
+    this.margin = {top: 20, right: 0, bottom: 30, left: 70},
     this.width = getInnerWidth(this.parentElement) - this.margin.left - this.margin.right,
     this.height = 400 - this.margin.top - this.margin.bottom;
 
@@ -58,7 +58,7 @@ CountVis.prototype.initVis = function(){
     // TODO: modify this to append an svg element, not modify the current placeholder SVG element
 
     this.svg = this.parentElement.append("svg")
-        .attr("width", this.width + this.margin.left + this.margin.right)
+        .attr("width", this.width + this.margin.left + this.margin.right + 1)
         .attr("height", this.height + this.margin.top + this.margin.bottom)
       .append("g")
         .attr("transform", "translate(" + this.margin.left + "," + this.margin.top + ")");
@@ -95,7 +95,9 @@ CountVis.prototype.initVis = function(){
 
     this.brush = d3.svg.brush()
       .on("brush", function(){
-        console.log(that.brush.extent());
+         $(that.eventHandler).trigger("selectionChanged", that.brush);
+
+
       });
 
 
@@ -113,8 +115,6 @@ CountVis.prototype.initVis = function(){
 
     this.svg.append("g")
       .attr("class", "brush");
-
-    
 
     // call the update method
     this.updateVis();
@@ -220,7 +220,6 @@ CountVis.prototype.addSlider = function(svg){
         var sliderValue = sliderScale.invert(value);
 
         that.y.exponent(sliderValue);
-        //that.yAxis.scale = that.y;
 
         // TODO: do something here to deform the y scale
         console.log("Y Axis Slider value: ", sliderValue);

@@ -92,6 +92,7 @@ AgeVis.prototype.updateVis = function(){
     // TODO: ...update graphs
 
 
+
 }
 
 
@@ -104,7 +105,8 @@ AgeVis.prototype.updateVis = function(){
 AgeVis.prototype.onSelectionChange= function (selectionStart, selectionEnd){
 
     // TODO: call wrangle function
-
+    console.log(selectionStart);
+    console.log(selectionEnd);
     this.updateVis();
 
 
