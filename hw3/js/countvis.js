@@ -29,7 +29,7 @@ CountVis = function(_parentElement, _data, _metaData, _eventHandler){
 
     // TODO: define all "constants" here
 
-    this.margin = {top: 20, right: 0, bottom: 30, left: 10},
+    this.margin = {top: 20, right: 0, bottom: 30, left: 80},
     this.width = getInnerWidth(this.parentElement) - this.margin.left - this.margin.right,
     this.height = 400 - this.margin.top - this.margin.bottom;
 
@@ -64,14 +64,57 @@ CountVis.prototype.initVis = function(){
         .attr("transform", "translate(" + this.margin.left + "," + this.margin.top + ")");
 
     //TODO: implement the slider -- see example at http://bl.ocks.org/mbostock/6452972
-    this.addSlider(this.svg)
+    this.addSlider(this.parentElement.select("svg"));
 
 
     // filter, aggregate, modify data
     this.wrangleData();
 
+
+
+    this.x = d3.time.scale()
+        .range([0, this.width]);
+
+    this.y = d3.scale.pow()
+        .exponent(0.01)
+        .range([this.height, 0]);
+
+    this.xAxis = d3.svg.axis()
+        .scale(this.x)
+        .orient("bottom");
+
+    this.yAxis = d3.svg.axis()
+        .scale(this.y)
+        .orient("left");
+
+    this.area = d3.svg.area()
+        .x(function(d) { return that.x(d.time); })
+        .y0(this.height)
+        .y1(function(d) { return that.y(d.count); });
+
+
+    this.brush = d3.svg.brush()
+      .on("brush", function(){
+        console.log(that.brush.extent());
+      });
+
+
+      this.svg.append("g")
+          .attr("class", "x axis")
+          .attr("transform", "translate(0," + this.height + ")")
+          .call(this.xAxis);
+
+      this.svg.append("g")
+          .attr("class", "y axis")
+          .attr("transform", "translate(0,0)")
+          .call(this.yAxis)
+        .append("text")
+          .attr("transform", "rotate(-90)");
+
+    this.svg.append("g")
+      .attr("class", "brush");
+
     
-    this.addPlot(this.svg)
 
     // call the update method
     this.updateVis();
@@ -114,8 +157,7 @@ CountVis.prototype.updateVis = function(){
 
     path.enter()
       .append("path")
-      .attr("class", "area")
-    .attr("transform", "translate(80,0)");
+      .attr("class", "area");
 
     path
       //.transition()
@@ -123,6 +165,12 @@ CountVis.prototype.updateVis = function(){
 
     path.exit()
       .remove();
+
+    this.brush.x(this.x);
+    this.svg.select(".brush")
+        .call(this.brush)
+      .selectAll("rect")
+        .attr("height", this.height);
    }
 
 /**
@@ -156,50 +204,6 @@ CountVis.prototype.onSelectionChange= function (selectionStart, selectionEnd){
     }
 
 
-CountVis.prototype.addPlot = function(svg) {
-
-    var that = this;
-
-
-    this.x = d3.time.scale()
-        .range([0, this.width]);
-
-    this.y = d3.scale.pow()
-        .exponent(0.01)
-        .range([this.height, 0]);
-
-    this.xAxis = d3.svg.axis()
-        .scale(this.x)
-        .orient("bottom");
-
-    this.yAxis = d3.svg.axis()
-        .scale(this.y)
-        .orient("left");
-
-    this.area = d3.svg.area()
-        .x(function(d) { return that.x(d.time); })
-        .y0(this.height)
-        .y1(function(d) { return that.y(d.count); });
-
-      this.x.domain(d3.extent(this.displayData, function(d) { return d.time; }));
-      this.y.domain([0, d3.max(this.displayData, function(d) { return d.count; })]);
-
-
-      this.svg.append("g")
-          .attr("class", "x axis")
-          .attr("transform", "translate(80," + this.height + ")")
-          .call(this.xAxis);
-
-      this.svg.append("g")
-          .attr("class", "y axis")
-          .attr("transform", "translate(80,0)")
-          .call(this.yAxis)
-        .append("text")
-          .attr("transform", "rotate(-90)");
-}
-
-
-
 /**
  * creates the y axis slider
  * @param svg -- the svg element
@@ -208,7 +212,7 @@ CountVis.prototype.addSlider = function(svg){
     var that = this;
 
     // TODO: Think of what is domain and what is range for the y axis slider !!
-    var sliderScale = d3.scale.linear().range([0,200]).domain([0.01,5])
+    var sliderScale = d3.scale.linear().range([0,200]).domain([0.01,1])
 
     var sliderDragged = function(){
         var value = Math.max(0, Math.min(200,d3.event.y));
@@ -257,9 +261,7 @@ CountVis.prototype.addSlider = function(svg){
         fill:"#333333"
     }).call(sliderDragBehaviour)
 
-
 }
-
 
 
 
