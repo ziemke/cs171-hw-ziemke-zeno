@@ -115,7 +115,7 @@
                 //TODO: Instantiate all Vis Objects here
                 var count_vis = new CountVis(d3.select("#countVis"), allData, metaData, MyEventHandler);
                 var age_vis = new AgeVis(d3.select("#ageVis"), allData, metaData);
-				var prio_vis = new PrioVis(d3.select("#prioVis"), allData, metaData);
+				//var prio_vis = new PrioVis(d3.select("#prioVis"), allData, metaData);
 
                 // TODO: bind the eventHandler to the Vis Objects
                 // events will be created from the CountVis object (nothing to do here)
@@ -124,7 +124,7 @@
                  $(MyEventHandler).bind("selectionChanged", function(event, brush){
                       var range = brush.extent();
                       age_vis.onSelectionChange(range[0], range[1]);
-                      prio_vis.onSelectionChange(range[0], range[1]);
+                     // prio_vis.onSelectionChange(range[0], range[1]);
                   });
 
             }
@@ -175,7 +175,6 @@
                                 // BE AWARE THAT THE DATA MIGHT CONTAIN ages >99 which you have to handle especially
                                 // final result:
                                 // [0,0,0,..,1034,23,...] -- array length is 100
-                                 debugger; 
 
                                 return res;
                             }
@@ -219,6 +218,8 @@
     <pre>
 - can not move brush call to separate function
 - duplicate ticks on x axis most left
+- errors in agevis data ("age" 2009, etc.)
+- handling of ages > 100 ok?
     </pre>
 </body>
 </html>

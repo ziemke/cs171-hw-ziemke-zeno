@@ -45,56 +45,6 @@ PrioVis.prototype.initVis = function(){
 
     var that = this; // read about the this
 
-    this.svg = this.parentElement.append("svg")
-        .attr("width", this.width + this.margin.left + this.margin.right)
-        .attr("height", this.height + this.margin.top + this.margin.bottom)
-      .append("g")
-        .attr("transform", "translate(" + this.margin.left + "," + this.margin.top + ")");
-
-
-
-    //TODO: construct or select SVG
-    //TODO: create axis and scales
-
-    // filter, aggregate, modify data
-    this.wrangleData(null);
-
-
-
-    this.x = d3.time.scale()
-        .range([0, this.width]);
-
-    this.y = d3.scale.pow()
-        .exponent(0.01)
-        .range([this.height, 0]);
-
-    this.xAxis = d3.svg.axis()
-        .scale(this.x)
-        .orient("bottom");
-
-    this.yAxis = d3.svg.axis()
-        .scale(this.y)
-        .orient("left");
-
-    this.area = d3.svg.area()
-        .x(function(d) { return that.x(d.time); })
-        .y0(this.height)
-        .y1(function(d) { return that.y(d.count); });
-
-
-      this.svg.append("g")
-          .attr("class", "x axis")
-          .attr("transform", "translate(0," + this.height + ")")
-          .call(this.xAxis);
-
-      this.svg.append("g")
-          .attr("class", "y axis")
-          .attr("transform", "translate(0,0)")
-          .call(this.yAxis)
-        .append("text")
-          .attr("transform", "rotate(-90)")
-          .text("age distribution");
-
     // call the update method
     this.updateVis();
 }
@@ -138,31 +88,7 @@ PrioVis.prototype.updateVis = function(){
     // TODO: ...update graphs
 
 
-     // updates scales
-    this.x.domain(d3.extent(this.displayData, function(d) { return d.time; }));
-    this.y.domain(d3.extent(this.displayData, function(d) { return d.count; }));
-
-    // updates axis
-    this.svg.select(".x.axis")
-        .call(this.xAxis);
-
-    this.svg.select(".y.axis")
-        .call(this.yAxis)
-
-    // updates graph
-    var path = this.svg.selectAll(".area")
-      .data([this.displayData])
-
-    path.enter()
-      .append("path")
-      .attr("class", "area");
-
-    path
-      //.transition()
-      .attr("d", this.area);
-
-    path.exit()
-      .remove();
+   
 
 }
 
@@ -213,7 +139,6 @@ PrioVis.prototype.filterAndAggregate = function(_filter){
         return 0;
     });
 
-    debugger;
     // accumulate all values that fulfill the filter criterion
 
     // TODO: implement the function that filters the data and sums the values
