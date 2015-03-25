@@ -123,6 +123,7 @@ VolumeVis.prototype.updateVis = function(){
         .call(this.xAxis);
 
     this.svg.select(".y.axis")
+       // .transition()
         .call(this.yAxis)
 
     // updates graph
@@ -134,7 +135,7 @@ VolumeVis.prototype.updateVis = function(){
       .attr("class", "area");
 
     path
-      .transition()
+      //.transition()
       .attr("d", this.area);
 
     path.exit()

@@ -25,7 +25,6 @@ CountVis = function(_parentElement, _data, _metaData, _eventHandler){
     this.metaData = _metaData;
     this.eventHandler = _eventHandler;
     this.displayData = [];
-    this.sliderValue = 1;
 
 
     // TODO: define all "constants" here
@@ -116,10 +115,10 @@ CountVis.prototype.updateVis = function(){
     path.enter()
       .append("path")
       .attr("class", "area")
-    .attr("transform", "translate(80,0");
+    .attr("transform", "translate(80,0)");
 
     path
-      .transition()
+      //.transition()
       .attr("d", this.area);
 
     path.exit()
@@ -166,7 +165,7 @@ CountVis.prototype.addPlot = function(svg) {
         .range([0, this.width]);
 
     this.y = d3.scale.pow()
-        .exponent(this.sliderValue)
+        .exponent(0.01)
         .range([this.height, 0]);
 
     this.xAxis = d3.svg.axis()
@@ -209,14 +208,15 @@ CountVis.prototype.addSlider = function(svg){
     var that = this;
 
     // TODO: Think of what is domain and what is range for the y axis slider !!
-    var sliderScale = d3.scale.linear().domain([0,200]).range([0,200])
+    var sliderScale = d3.scale.linear().range([0,200]).domain([0.01,5])
 
     var sliderDragged = function(){
         var value = Math.max(0, Math.min(200,d3.event.y));
 
         var sliderValue = sliderScale.invert(value);
 
-        that.sliderValue = sliderValue;
+        that.y.exponent(sliderValue);
+        //that.yAxis.scale = that.y;
 
         // TODO: do something here to deform the y scale
         console.log("Y Axis Slider value: ", sliderValue);
@@ -224,7 +224,7 @@ CountVis.prototype.addSlider = function(svg){
 
         d3.select(this)
             .attr("y", function () {
-                return sliderScale(that.sliderValue);
+                return sliderScale(sliderValue);
             })
 
         that.updateVis({});
