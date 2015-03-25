@@ -58,7 +58,7 @@ CountVis.prototype.initVis = function(){
     // TODO: modify this to append an svg element, not modify the current placeholder SVG element
 
     this.svg = this.parentElement.append("svg")
-        .attr("width", this.width + this.margin.left + this.margin.right + 1)
+        .attr("width", this.width + this.margin.left + this.margin.right)
         .attr("height", this.height + this.margin.top + this.margin.bottom)
       .append("g")
         .attr("transform", "translate(" + this.margin.left + "," + this.margin.top + ")");
