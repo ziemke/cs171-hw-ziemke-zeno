@@ -25,11 +25,14 @@ CountVis = function(_parentElement, _data, _metaData, _eventHandler){
     this.metaData = _metaData;
     this.eventHandler = _eventHandler;
     this.displayData = [];
+    this.sliderValue = 1;
 
 
     // TODO: define all "constants" here
 
-
+    this.margin = {top: 20, right: 0, bottom: 30, left: 10},
+    this.width = getInnerWidth(this.parentElement) - this.margin.left - this.margin.right,
+    this.height = 400 - this.margin.top - this.margin.bottom;
 
 
     this.initVis();
@@ -54,7 +57,12 @@ CountVis.prototype.initVis = function(){
     // --- ONLY FOR BONUS ---  implement zooming
 
     // TODO: modify this to append an svg element, not modify the current placeholder SVG element
-    this.svg = this.parentElement.select("svg");
+
+    this.svg = this.parentElement.append("svg")
+        .attr("width", this.width + this.margin.left + this.margin.right)
+        .attr("height", this.height + this.margin.top + this.margin.bottom)
+      .append("g")
+        .attr("transform", "translate(" + this.margin.left + "," + this.margin.top + ")");
 
     //TODO: implement the slider -- see example at http://bl.ocks.org/mbostock/6452972
     this.addSlider(this.svg)
@@ -62,6 +70,9 @@ CountVis.prototype.initVis = function(){
 
     // filter, aggregate, modify data
     this.wrangleData();
+
+    
+    this.addPlot(this.svg)
 
     // call the update method
     this.updateVis();
@@ -87,72 +98,33 @@ CountVis.prototype.wrangleData= function(){
  * @param _options -- only needed if different kinds of updates are needed
  */
 CountVis.prototype.updateVis = function(){
+ // updates scales
+    this.x.domain(d3.extent(this.displayData, function(d) { return d.time; }));
+    this.y.domain(d3.extent(this.displayData, function(d) { return d.count; }));
 
+    // updates axis
+    this.svg.select(".x.axis")
+        .call(this.xAxis);
 
-var margin = {top: 20, right: 20, bottom: 30, left: 50},
-    width = this.svg.attr("width") - margin.left - margin.right,
-    height = this.svg.attr("height") - margin.top - margin.bottom;
+    this.svg.select(".y.axis")
+        .call(this.yAxis)
 
-var parseDate = d3.time.format("%d-%b-%y").parse;
+    // updates graph
+    var path = this.svg.selectAll(".area")
+      .data([this.displayData])
 
-var x = d3.time.scale()
-    .range([0, width]);
-
-var y = d3.scale.linear()
-    .range([height, 0]);
-
-var xAxis = d3.svg.axis()
-    .scale(x)
-    .orient("bottom");
-
-var yAxis = d3.svg.axis()
-    .scale(y)
-    .orient("left");
-
-var area = d3.svg.area()
-    .x(function(d) { return x(d.date); })
-    .y0(height)
-    .y1(function(d) { return y(d.close); });
-
-var svg = this.svg
-  .append("g")
-    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-var data = [];
-
-d3.tsv("data/data.tsv", function(error, data) {
-  data.forEach(function(d) {
-    d.date = parseDate(d.date);
-    d.close = +d.close;
-    });
-  
-
-  x.domain(d3.extent(data, function(d) { return d.date; }));
-  y.domain([0, d3.max(data, function(d) { return d.close; })]);
-
-
-  svg.append("path")
-      .datum(data)
+    path.enter()
+      .append("path")
       .attr("class", "area")
-      .attr("d", area);
+    .attr("transform", "translate(80,0");
 
-  svg.append("g")
-      .attr("class", "x axis")
-      .attr("transform", "translate(0," + height + ")")
-      .call(xAxis);
+    path
+      .transition()
+      .attr("d", this.area);
 
-  svg.append("g")
-      .attr("class", "y axis")
-      .call(yAxis)
-    .append("text")
-      .attr("transform", "rotate(-90)")
-      .attr("y", 6)
-      .attr("dy", ".71em")
-      .style("text-anchor", "end")
-      .text("Price ($)"); 
-         // TODO: implement update graphs (D3: update, enter, exit)
-  });
-}
+    path.exit()
+      .remove();
+   }
 
 /**
  * Gets called by event handler and should create new aggregated data
@@ -178,7 +150,54 @@ CountVis.prototype.onSelectionChange= function (selectionStart, selectionEnd){
  *
  * */
 
+ var getInnerWidth = function(element) {
+        var style = window.getComputedStyle(element.node(), null);
 
+        return parseInt(style.getPropertyValue('width'));
+    }
+
+
+CountVis.prototype.addPlot = function(svg) {
+
+    var that = this;
+
+
+    this.x = d3.time.scale()
+        .range([0, this.width]);
+
+    this.y = d3.scale.pow()
+        .exponent(this.sliderValue)
+        .range([this.height, 0]);
+
+    this.xAxis = d3.svg.axis()
+        .scale(this.x)
+        .orient("bottom");
+
+    this.yAxis = d3.svg.axis()
+        .scale(this.y)
+        .orient("left");
+
+    this.area = d3.svg.area()
+        .x(function(d) { return that.x(d.time); })
+        .y0(this.height)
+        .y1(function(d) { return that.y(d.count); });
+
+      this.x.domain(d3.extent(this.displayData, function(d) { return d.time; }));
+      this.y.domain([0, d3.max(this.displayData, function(d) { return d.count; })]);
+
+
+      this.svg.append("g")
+          .attr("class", "x axis")
+          .attr("transform", "translate(80," + this.height + ")")
+          .call(this.xAxis);
+
+      this.svg.append("g")
+          .attr("class", "y axis")
+          .attr("transform", "translate(80,0)")
+          .call(this.yAxis)
+        .append("text")
+          .attr("transform", "rotate(-90)");
+}
 
 
 
@@ -197,13 +216,15 @@ CountVis.prototype.addSlider = function(svg){
 
         var sliderValue = sliderScale.invert(value);
 
+        that.sliderValue = sliderValue;
+
         // TODO: do something here to deform the y scale
         console.log("Y Axis Slider value: ", sliderValue);
 
 
         d3.select(this)
             .attr("y", function () {
-                return sliderScale(sliderValue);
+                return sliderScale(that.sliderValue);
             })
 
         that.updateVis({});
