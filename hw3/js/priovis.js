@@ -27,8 +27,11 @@ PrioVis = function(_parentElement, _data, _metaData){
 
 
 
-    // TODO: define all constants here
+      // TODO: define all "constants" here
 
+    this.margin = {top: 20, right: 0, bottom: 30, left: 20},
+    this.width = getInnerWidth(this.parentElement) - this.margin.left - this.margin.right,
+    this.height = 400 - this.margin.top - this.margin.bottom;
 
     this.initVis();
 
@@ -42,12 +45,55 @@ PrioVis.prototype.initVis = function(){
 
     var that = this; // read about the this
 
+    this.svg = this.parentElement.append("svg")
+        .attr("width", this.width + this.margin.left + this.margin.right)
+        .attr("height", this.height + this.margin.top + this.margin.bottom)
+      .append("g")
+        .attr("transform", "translate(" + this.margin.left + "," + this.margin.top + ")");
+
+
 
     //TODO: construct or select SVG
     //TODO: create axis and scales
 
     // filter, aggregate, modify data
     this.wrangleData(null);
+
+
+
+    this.x = d3.time.scale()
+        .range([0, this.width]);
+
+    this.y = d3.scale.pow()
+        .exponent(0.01)
+        .range([this.height, 0]);
+
+    this.xAxis = d3.svg.axis()
+        .scale(this.x)
+        .orient("bottom");
+
+    this.yAxis = d3.svg.axis()
+        .scale(this.y)
+        .orient("left");
+
+    this.area = d3.svg.area()
+        .x(function(d) { return that.x(d.time); })
+        .y0(this.height)
+        .y1(function(d) { return that.y(d.count); });
+
+
+      this.svg.append("g")
+          .attr("class", "x axis")
+          .attr("transform", "translate(0," + this.height + ")")
+          .call(this.xAxis);
+
+      this.svg.append("g")
+          .attr("class", "y axis")
+          .attr("transform", "translate(0,0)")
+          .call(this.yAxis)
+        .append("text")
+          .attr("transform", "rotate(-90)")
+          .text("age distribution");
 
     // call the update method
     this.updateVis();
@@ -92,6 +138,31 @@ PrioVis.prototype.updateVis = function(){
     // TODO: ...update graphs
 
 
+     // updates scales
+    this.x.domain(d3.extent(this.displayData, function(d) { return d.time; }));
+    this.y.domain(d3.extent(this.displayData, function(d) { return d.count; }));
+
+    // updates axis
+    this.svg.select(".x.axis")
+        .call(this.xAxis);
+
+    this.svg.select(".y.axis")
+        .call(this.yAxis)
+
+    // updates graph
+    var path = this.svg.selectAll(".area")
+      .data([this.displayData])
+
+    path.enter()
+      .append("path")
+      .attr("class", "area");
+
+    path
+      //.transition()
+      .attr("d", this.area);
+
+    path.exit()
+      .remove();
 
 }
 
@@ -132,12 +203,8 @@ PrioVis.prototype.filterAndAggregate = function(_filter){
 
     // Set filter to a function that accepts all items
     // ONLY if the parameter _filter is NOT null use this parameter
-    var filter = function(){return true;}
-    if (_filter != null){
-        filter = _filter;
-    }
-    //Dear JS hipster, a more hip variant of this construct would be:
-    // var filter = _filter || function(){return true;}
+ 
+    var filter = _filter || function(){return true;}
 
     var that = this;
 
@@ -146,7 +213,7 @@ PrioVis.prototype.filterAndAggregate = function(_filter){
         return 0;
     });
 
-
+    debugger;
     // accumulate all values that fulfill the filter criterion
 
     // TODO: implement the function that filters the data and sums the values

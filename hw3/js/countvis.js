@@ -110,8 +110,6 @@ CountVis.prototype.initVis = function(){
           .attr("class", "y axis")
           .attr("transform", "translate(0,0)")
           .call(this.yAxis)
-        .append("text")
-          .attr("transform", "rotate(-90)");
 
     this.svg.append("g")
       .attr("class", "brush");
