@@ -29,9 +29,9 @@ CountVis = function(_parentElement, _data, _metaData, _eventHandler){
 
     // TODO: define all "constants" here
 
-    this.margin = {top: 20, right: 0, bottom: 30, left: 70},
-    this.width = getInnerWidth(this.parentElement) - this.margin.left - this.margin.right,
-    this.height = 400 - this.margin.top - this.margin.bottom;
+    this.margin = {top: 20, right: 20, bottom: 30, left: 70},
+    this.width = 650 - this.margin.left - this.margin.right,
+    this.height = 330 - this.margin.top - this.margin.bottom;
 
 
     this.initVis();
@@ -199,6 +199,13 @@ CountVis.prototype.onSelectionChange= function (selectionStart, selectionEnd){
         var style = window.getComputedStyle(element.node(), null);
 
         return parseInt(style.getPropertyValue('width'));
+    }
+
+
+ var getInnerHeight = function(element) {
+        var style = window.getComputedStyle(element.node(), null);
+
+        return parseInt(style.getPropertyValue('height'));
     }
 
 

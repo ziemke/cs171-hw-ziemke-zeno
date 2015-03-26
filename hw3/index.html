@@ -60,10 +60,6 @@
         <div class="row">
             <div class="col-md-9" id="countVis"></div>
             <div class="col-md-3" id="ageVis">
-                <!-- TODO: delete placeholder svg element -->
-                <svg width="230" height="330" style="background-color: lightcoral">
-                    <text x="50" y="50">HERE should be AgeVis</text>
-                </svg>
             </div>
         </div>
 
@@ -162,7 +158,7 @@
             
                                 res.ages = [];
                                 d.age.forEach(function(n){
-                                     if(Number.isInteger(n["age"]))
+                                     if(Number.isInteger(n["age"]) && n["age"] < 123) //Oldest person alive was ~123
                                         res.ages[n["age"]]=n["count(*)"];
                                  })     
 

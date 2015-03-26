@@ -29,9 +29,9 @@ AgeVis = function(_parentElement, _data, _metaData){
 
     // TODO: define all "constants" here
 
-    this.margin = {top: 20, right: 0, bottom: 30, left: 00},
-    this.width = getInnerWidth(this.parentElement) - this.margin.left - this.margin.right,
-    this.height = 400 - this.margin.top - this.margin.bottom;
+    this.margin = {top: 20, right: 20, bottom: 30, left: 50},
+    this.width = 230 - this.margin.left - this.margin.right,
+    this.height = 330 - this.margin.top - this.margin.bottom;
 
 
     this.initVis();
@@ -52,8 +52,7 @@ AgeVis.prototype.initVis = function(){
         .attr("width", this.width + this.margin.left + this.margin.right)
         .attr("height", this.height + this.margin.top + this.margin.bottom)
       .append("g")
-        .attr("transform", "translate(" + this.margin.left + "," + this.margin.top + ")");
-
+        .attr("transform", "translate(" + this.margin.left + "," + this.margin.top + ")")
 
 
     //TODO: construct or select SVG
@@ -64,39 +63,25 @@ AgeVis.prototype.initVis = function(){
 
 
 
-    this.x = d3.time.scale()
-        .range([0, this.width]);
+    this.x = d3.scale.linear()
+        .range([0, this.height]);
 
-    this.y = d3.scale.pow()
-        .exponent(0.01)
-        .range([this.height, 0]);
+    this.y = d3.scale.linear()
+        .range([this.width, 0]);
 
     this.xAxis = d3.svg.axis()
         .scale(this.x)
-        .orient("bottom");
-
-    this.yAxis = d3.svg.axis()
-        .scale(this.y)
         .orient("left");
 
     this.area = d3.svg.area()
-        .x(function(d) { return that.x(d.time); })
+        .x(function(d, i) { return that.x(i); })
         .y0(this.height)
-        .y1(function(d) { return that.y(d.count); });
+        .y1(function(d) { return that.y(d); });
 
 
       this.svg.append("g")
           .attr("class", "x axis")
-          .attr("transform", "translate(0," + this.height + ")")
           .call(this.xAxis);
-
-      this.svg.append("g")
-          .attr("class", "y axis")
-          .attr("transform", "translate(0,0)")
-          .call(this.yAxis)
-        .append("text")
-          .attr("transform", "rotate(-90)")
-          .text("age distribution");
 
     // call the update method
     this.updateVis();
@@ -141,15 +126,12 @@ AgeVis.prototype.updateVis = function(){
     // TODO: ...update graphs
 
       // updates scales
-    this.x.domain(d3.extent(this.displayData, function(d) { return d.time; }));
-    this.y.domain(d3.extent(this.displayData, function(d) { return d.count; }));
+    this.x.domain([0, this.displayData.length]);
+    this.y.domain([0, d3.max(this.displayData)]);
 
     // updates axis
     this.svg.select(".x.axis")
         .call(this.xAxis);
-
-    this.svg.select(".y.axis")
-        .call(this.yAxis)
 
     // updates graph
     var path = this.svg.selectAll(".area")
@@ -161,6 +143,7 @@ AgeVis.prototype.updateVis = function(){
 
     path
       //.transition()
+      .attr("transform", "rotate(90,0,0),translate(0,-"+this.width+")")
       .attr("d", this.area);
 
     path.exit()
@@ -178,10 +161,16 @@ AgeVis.prototype.updateVis = function(){
  * @param selection
  */
 AgeVis.prototype.onSelectionChange= function (selectionStart, selectionEnd){
+    that = this;
 
     // TODO: call wrangle function
     console.log(selectionStart);
     console.log(selectionEnd);
+
+    this.selectionStart  =  selectionStart;
+    this.selectionEnd =  selectionEnd;
+
+    this.wrangleData(function(d){return d.time>=that.selectionStart && d.time<=that.selectionEnd;})
     this.updateVis();
 
 
@@ -215,7 +204,7 @@ AgeVis.prototype.filterAndAggregate = function(_filter){
     
     var filtered_data = this.data.filter(filter);
 
-    var max_age = d3.max(this.data.map(function(d) {return d.ages.length;}))
+    var max_age = d3.max(filtered_data.map(function(d) {return d.ages.length;}))
     
     // create an array of values for age 0-100 or bigger if available
     var res = d3.range(0, max_age).map(function (i) {
