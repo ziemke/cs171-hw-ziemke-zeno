@@ -93,13 +93,25 @@ CountVis.prototype.initVis = function(){
         .y1(function(d) { return that.y(d.count); });
 
 
-    this.brush = d3.svg.brush()
+    this.brush = d3.svg.multibrush()
       .on("brush", function(){
-         $(that.eventHandler).trigger("selectionChanged", that.brush);
+        console.log(that.brush.extent());
+         //$(that.eventHandler).trigger("selectionChanged", that.brush);
 
 
       });
 
+      this.brush.resizeAdaption(
+          function (selection) {
+            selection.select("rect").attr("height", that.height);
+          }
+        );
+
+      this.brush.extentAdaption(
+        function (selection) {
+            selection.attr("height", that.height);
+          }
+        );
 
       this.svg.append("g")
           .attr("class", "x axis")
@@ -113,6 +125,16 @@ CountVis.prototype.initVis = function(){
 
     this.svg.append("g")
       .attr("class", "brush");
+
+    /*this.plot = this.svg.append("rect")
+      .attr("width", this.width)
+      .attr("height", this.height)
+      .style("fill", "#EEEEEE")
+      .attr("pointer-events", "all")
+     // .on("mousedown.drag", self.plot_drag())
+     // .on("touchstart.drag", self.plot_drag())
+      this.plot.call(d3.behavior.zoom().x(this.x).y(this.y).on("zoom", function() {that.updateVis(); console.log("zoom"); }));
+    */
 
     // call the update method
     this.updateVis();
