@@ -95,8 +95,8 @@ CountVis.prototype.initVis = function(){
 
     this.brush = d3.svg.multibrush()
       .on("brush", function(){
-        console.log(that.brush.extent());
-         //$(that.eventHandler).trigger("selectionChanged", that.brush);
+        //console.log(that.brush.extent());
+        $(that.eventHandler).trigger("selectionChanged", that.brush);
 
 
       });

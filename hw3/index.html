@@ -49,7 +49,7 @@
             </div>
 
             <div class="col-md-8">
-                <b>current brush:</b> <span id="brushInfo"></span>
+                <b>current brush(es):</b> <span id="brushInfo"></span>
             </div>
 
 
@@ -115,11 +115,15 @@
                 // events will be consumed by the PrioVis and AgeVis object (binding should happen here)
 
                  $(MyEventHandler).bind("selectionChanged", function(event, brush){
-                      var range = brush.extent();
-                      age_vis.onSelectionChange(range[0], range[1]);
-                      prio_vis.onSelectionChange(range[0], range[1]);
+                      var ranges = brush.extent();
+                      age_vis.onSelectionChange(ranges[0][0], ranges[0][1]);
+                      prio_vis.onSelectionChange(ranges[0][0], ranges[0][1]);
 
-                      d3.select("#brushInfo").text(dateFormat(range[0]) + " -> " + dateFormat(range[1]))
+                    if (ranges.length == 1)
+                        d3.select("#brushInfo").text(dateFormat(ranges[0][0]) + " -> " + dateFormat(ranges[0][1]))
+                    else
+                        d3.select("#brushInfo").text(dateFormat(ranges[0][0]) + " -> " + dateFormat(ranges[0][1]) + "  &  " + dateFormat(ranges[1][0]) + " -> " + dateFormat(ranges[1][1]))
+                    
                   });
 
             }
@@ -222,6 +226,11 @@
 - video or image als formatting template? (axis, ticks, etc.)
 - necessary to be able to deactivate brushing?
 - best way to implement chart title labels?
+    </pre>
+
+    <pre>
+- had to patch external lib multibrush to only allow 2 brushes max
+- instruction > click outside of brush without moving mouse to reset brushes
     </pre>
 </body>
 </html>

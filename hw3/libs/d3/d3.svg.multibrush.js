@@ -254,11 +254,16 @@ d3.svg.multibrush = function() {
 
     else {
       i = xExtent.length - 1; // Figure out the count of the new extent.
+
+      if (i >= 1) return;
+
+
       xExtent.push([0,0]);
       yExtent.push([0,0]);
 
       // If the ALT key is down when starting a brush, the center is at the mouse.
       if (d3.event.altKey) center = origin.slice();
+
     }
 
     // Propagate the active cursor to the body for the drag duration.
