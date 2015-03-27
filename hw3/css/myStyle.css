@@ -17,7 +17,7 @@ body{
     shape-rendering: crispEdges;
 }
 
-#prioVis > svg > g > g.x.axis > g > line {
+#ageVis > svg > g > g > g > line {
   stroke: #FFF;
 }
 

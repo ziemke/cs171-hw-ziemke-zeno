@@ -30,8 +30,8 @@ AgeVis = function(_parentElement, _data, _metaData){
     // TODO: define all "constants" here
 
     this.margin = {top: 20, right: 20, bottom: 30, left: 50},
-    this.width = 230 - this.margin.left - this.margin.right,
-    this.height = 330 - this.margin.top - this.margin.bottom;
+    this.width = 330 - this.margin.left - this.margin.right,
+    this.height = 230 - this.margin.top - this.margin.bottom;
 
 
     this.initVis();
@@ -49,10 +49,10 @@ AgeVis.prototype.initVis = function(){
 
     
     this.svg = this.parentElement.append("svg")
-        .attr("width", this.width + this.margin.left + this.margin.right)
-        .attr("height", this.height + this.margin.top + this.margin.bottom)
+        .attr("width", this.height + this.margin.top + this.margin.bottom) //rotated
+        .attr("height", this.width + this.margin.left + this.margin.right) //rotated
       .append("g")
-        .attr("transform", "translate(" + this.margin.left + "," + this.margin.top + ")")
+        .attr("transform", "rotate(90,"+ this.height/2 +","+ this.width/2 +")")
 
 
     //TODO: construct or select SVG
@@ -64,14 +64,14 @@ AgeVis.prototype.initVis = function(){
 
 
     this.x = d3.scale.linear()
-        .range([0, this.height]);
+        .range([0, this.width]);
 
     this.y = d3.scale.linear()
-        .range([this.width, 0]);
+        .range([this.height, 0]);
 
     this.xAxis = d3.svg.axis()
         .scale(this.x)
-        .orient("left");
+        .orient("bottom")
 
     this.area = d3.svg.area()
         .x(function(d, i) { return that.x(i); })
@@ -130,7 +130,13 @@ AgeVis.prototype.updateVis = function(){
 
     // updates axis
     this.svg.select(".x.axis")
-        .call(this.xAxis);
+        .call(this.xAxis)
+        .attr("transform", "translate(0,"+this.height+")")
+        .selectAll("text")  
+            .style("text-anchor", "end")
+            .attr("dx", "-.8em")
+            .attr("dy", "-.6em")
+            .attr("transform", function(d) { return "rotate(-90)" });;
 
     // updates graph
     var path = this.svg.selectAll(".area")
@@ -142,7 +148,7 @@ AgeVis.prototype.updateVis = function(){
 
     path
       //.transition()
-      .attr("transform", "rotate(90,0,0),translate(0,-"+this.width+")")
+     // .attr("transform", "rotate(90,0,0),translate(0,-"+this.width+")")
       .attr("d", this.area);
 
     path.exit()

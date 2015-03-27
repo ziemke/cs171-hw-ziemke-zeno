@@ -117,6 +117,8 @@
                       var range = brush.extent();
                       age_vis.onSelectionChange(range[0], range[1]);
                       prio_vis.onSelectionChange(range[0], range[1]);
+
+                      d3.select("#brushInfo").text(dateFormat(range[0]) + " -> " + dateFormat(range[1]))
                   });
 
             }
@@ -179,6 +181,8 @@
 			
 			
 			// HELPERS 
+
+            var dateFormat = d3.time.format("%Y-%m-%d");
 			
 			 var aggregateCountsForRange = function(from, to){
 				 return d3.sum(allData.filter(function(d){return d.time>=from && d.time<=to;}), function(d){return d.count;})
@@ -214,6 +218,9 @@
 - handling of ages > 100 ok?
 - priovis, how to remove axis lines?
 - alternative for hide tick css hack?
+- video or image als formatting template? (axis, ticks, etc.)
+- necessary to be able to deactivate brushing?
+- best way to implement chart title labels?
     </pre>
 </body>
 </html>
