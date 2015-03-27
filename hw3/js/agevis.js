@@ -80,8 +80,7 @@ AgeVis.prototype.initVis = function(){
 
 
       this.svg.append("g")
-          .attr("class", "x axis")
-          .call(this.xAxis);
+          .attr("class", "x axis");
 
     // call the update method
     this.updateVis();
@@ -164,8 +163,8 @@ AgeVis.prototype.onSelectionChange= function (selectionStart, selectionEnd){
     that = this;
 
     // TODO: call wrangle function
-    console.log(selectionStart);
-    console.log(selectionEnd);
+   // console.log(selectionStart);
+   // console.log(selectionEnd);
 
     this.selectionStart  =  selectionStart;
     this.selectionEnd =  selectionEnd;

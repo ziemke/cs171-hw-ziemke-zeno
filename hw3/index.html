@@ -65,10 +65,6 @@
 
         <div class="row">
             <div class="col-md-12" id="prioVis">
-                <!-- TODO: delete placeholder svg element -->
-                <svg width="650" height="440" style="background-color: lightgreen">
-                    <text x="50" y="50">HERE should be PrioVis</text>
-                </svg>
             </div>
 
         </div>
@@ -111,7 +107,7 @@
                 //TODO: Instantiate all Vis Objects here
                 var count_vis = new CountVis(d3.select("#countVis"), allData, metaData, MyEventHandler);
                 var age_vis = new AgeVis(d3.select("#ageVis"), allData, metaData);
-				//var prio_vis = new PrioVis(d3.select("#prioVis"), allData, metaData);
+				var prio_vis = new PrioVis(d3.select("#prioVis"), allData, metaData);
 
                 // TODO: bind the eventHandler to the Vis Objects
                 // events will be created from the CountVis object (nothing to do here)
@@ -120,7 +116,7 @@
                  $(MyEventHandler).bind("selectionChanged", function(event, brush){
                       var range = brush.extent();
                       age_vis.onSelectionChange(range[0], range[1]);
-                     // prio_vis.onSelectionChange(range[0], range[1]);
+                      prio_vis.onSelectionChange(range[0], range[1]);
                   });
 
             }
@@ -216,6 +212,7 @@
 - duplicate ticks on x axis most left
 - errors in agevis data ("age" 2009, etc.)
 - handling of ages > 100 ok?
+- priovis, how to remove axis lines?
     </pre>
 </body>
 </html>
