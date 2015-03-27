@@ -5,11 +5,20 @@ body{
     font: 10px sans-serif;
 }
 
-.axis line,
-.axis path {
+.axis line {
     fill: none;
     stroke: #000;
     shape-rendering: crispEdges;
+}
+
+.axis path {
+    fill: none;
+    stroke: #FFF;
+    shape-rendering: crispEdges;
+}
+
+#prioVis > svg > g > g.x.axis > g > line {
+  stroke: #FFF;
 }
 
 .boundingBox{
