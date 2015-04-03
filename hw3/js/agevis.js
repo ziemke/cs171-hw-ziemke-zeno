@@ -24,6 +24,7 @@ AgeVis = function(_parentElement, _data, _metaData){
     this.data = _data;
     this.metaData = _metaData;
     this.displayData = [];
+    this.ranges = [];
 
 
 
@@ -179,11 +180,10 @@ AgeVis.prototype.onSelectionChange= function (ranges){
    // console.log(selectionStart);
    // console.log(selectionEnd);
 
-   if (ranges.length > 0) { 
-        this.selectionStart  =  ranges[0][0];
-        this.selectionEnd =  ranges[0][1];
-
-        this.wrangleData(function(d){return d.time>=that.selectionStart && d.time<=that.selectionEnd;})
+    this.ranges = ranges;
+    
+    if (ranges.length > 0) { 
+        this.wrangleData(function(d,r){return d.time>=r[0] && d.time<=r[1];})
     } else {
         this.wrangleData(null)
     }
@@ -219,8 +219,25 @@ AgeVis.prototype.filterAndAggregate = function(_filter){
     var filter = _filter || function(){return true;}
 
     var that = this;
+
+    if (this.ranges.length > 1) {
     
-    var filtered_data = this.data.filter(filter);
+        var filtered_data = 
+            this.data.filter(function(d) {
+                return filter(d, that.ranges[0])
+            }).concat(
+                this.data.filter(function(d) {
+                    return filter(d, that.ranges[1])
+                })
+            )
+
+    } else {
+         var filtered_data = this.data.filter(function(d) {
+            return filter(d, that.ranges[0])
+        });
+
+    }
+
 
     var max_age = d3.max(filtered_data.map(function(d) {return d.ages.length;}))
     
@@ -228,6 +245,8 @@ AgeVis.prototype.filterAndAggregate = function(_filter){
     var res = d3.range(0, max_age).map(function (i) {
         return d3.sum(filtered_data.map(function(d) { return d.ages[i]; }));
     });
+
+
 
 
 
