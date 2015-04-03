@@ -210,7 +210,8 @@ PrioVis.prototype.updateVis = function(){
                     .attr("y2", that.y(that.average_count(that.data, that.metaData)))
                     .attr("stroke-width", 1)
                     .attr("stroke", "black")
-                    .attr("title", that.average_count(that.data, that.metaData))   
+                    .attr("title", that.average_count(that.data, that.metaData)) 
+                    .attr("id", "averageLine")
 }
 
 
