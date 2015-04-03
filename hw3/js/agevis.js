@@ -29,7 +29,7 @@ AgeVis = function(_parentElement, _data, _metaData){
 
     // TODO: define all "constants" here
 
-    this.margin = {top: 20, right: 20, bottom: 30, left: 50},
+    this.margin = {top: 30, right: 20, bottom: 30, left: 50},
     this.width = 330 - this.margin.left - this.margin.right,
     this.height = 230 - this.margin.top - this.margin.bottom;
 
@@ -47,12 +47,19 @@ AgeVis.prototype.initVis = function(){
     var that = this; // read about the this
 
 
+      this.parentElement.append("div")
+        .attr("id", "agevis")
+        .attr("class", "vis_label")
+        .text("Age distribution:")
+        
+
     
     this.svg = this.parentElement.append("svg")
         .attr("width", this.height + this.margin.top + this.margin.bottom) //rotated
         .attr("height", this.width + this.margin.left + this.margin.right) //rotated
       .append("g")
         .attr("transform", "rotate(90,"+ this.height/2 +","+ this.width/2 +")")
+
 
 
     //TODO: construct or select SVG

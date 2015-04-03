@@ -43,3 +43,37 @@ body{
 .area {
   fill: black;
 }
+
+.circle {
+ stroke-width: 1;
+ fill: none
+}
+
+.circle_label {
+  font: 10px sans-serif;
+  text-anchor: middle;
+}
+
+
+.vis_label {
+  font: 12px sans-serif;
+  font-weight:  300;
+  text-anchor: left;
+  fill: black;
+  text-decoration: underline;
+}
+
+
+#countVis {
+  margin-top: 20px;
+}
+
+#agevis {
+  margin-top: 0px;
+  margin-bottom: -30px;
+  margin-left: 45px;
+}
+
+#prioVis {
+  margin-top: 30px;
+}

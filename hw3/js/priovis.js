@@ -24,6 +24,7 @@ PrioVis = function(_parentElement, _data, _metaData){
     this.data = _data;
     this.metaData = _metaData;
     this.displayData = [];
+    this. ranges = [];
 
 
 
@@ -55,6 +56,13 @@ PrioVis.prototype.initVis = function(){
         .attr("transform", "translate(" + this.margin.left + "," + this.margin.top + ")")
 
 
+         this.svg.append("text")
+        .attr("class", "vis_label")
+        .text("Distribution of priorities:")
+        .attr("x", 5)
+        .attr("y", -5)
+
+
     //TODO: construct or select SVG
     //TODO: create axis and scales
 
@@ -83,6 +91,9 @@ PrioVis.prototype.initVis = function(){
     this.svg.append("g")
       .attr("class", "y axis")
 
+
+    this.line_average = this.svg.append("line");
+
     // call the update method
     this.updateVis();
 }
@@ -101,9 +112,6 @@ PrioVis.prototype.wrangleData= function(_filterFunction){
     //// if you don't pass options -- set the default options
     //// the default is: var options = {filter: function(){return true;} }
     //var options = _options || {filter: function(){return true;}};
-
-
-
 
 
 }
@@ -126,9 +134,8 @@ PrioVis.prototype.updateVis = function(){
     // TODO: ...update graphs
 
     var that = this;
-
       // updates scales
-      this.x.domain(this.displayData.map(function(d) { return d.meta_data["item-title"]; }));
+      this.x.domain(this.displayData.map(function(d,i) { return d.meta_data["item-title"]; }));
       this.y.domain([0, d3.max(this.displayData, function(d) { return d.count; })]);
 
     this.svg.select(".x.axis")
@@ -142,7 +149,8 @@ PrioVis.prototype.updateVis = function(){
     this.svg.select(".y.axis")
           .call(this.yAxis)
 
-      var bars = this.svg.selectAll(".bar")
+
+        var bars = this.svg.selectAll(".bar")
           .data(this.displayData)
 
         bars.enter().append("rect")
@@ -155,8 +163,54 @@ PrioVis.prototype.updateVis = function(){
           .attr("y", function(d) { return that.y(d.count); })
           .attr("height", function(d) { return that.height - that.y(d.count); })
 
-
         bars.exit().remove();
+
+   if (this.ranges.length > 1) {
+        var bars_brush1 = d3.selectAll("rect.bar:nth-child(odd)");
+        var bars_brush2 = d3.selectAll("rect.bar:nth-child(even)");
+
+        bars.attr("width",  function(d) { return d3.select(this).attr("width") / 2.5 });
+
+        bars_brush2.attr("x", function(d) { return parseInt(d3.select(this).attr("x")) + parseInt(d3.select(this).attr("width")) + 2; });
+    } 
+
+    var growth_ellipses = this.svg.selectAll(".circle")
+     .data(this.get_growth_rates(this.displayData));
+
+    growth_ellipses.enter().append("ellipse")
+        .attr("class", "circle")
+
+    growth_ellipses
+        .style("stroke", function(d) { return d["ellipse-color"] })
+        .attr("cx", function(d) { return that.x(d["ellipse-title"]) + 13; })
+        .attr("cy", function(d) { return that.y(d["count"]) - 10; })
+        .attr("rx", 16)
+        .attr("ry", 8)
+        .text(function(d) { return d["count"]})
+
+    growth_ellipses.exit().remove();
+
+    var growth_labels = this.svg.selectAll(".circle_label")
+     .data(this.get_growth_rates(this.displayData));
+
+    growth_labels.enter().append("text")
+        .attr("class", "circle_label")
+
+    growth_labels
+        .style("fill", function(d) { return d["ellipse-color"] })
+        .attr("x", function(d) { return that.x(d["ellipse-title"]) + 13; })
+        .attr("y", function(d) { return that.y(d["count"]) - 6; })
+        .text(function(d) { return d3.format("%")(d["growth_rate"]);})
+
+    growth_labels.exit().remove();
+
+      this.line_average.attr("x1", 0)
+                    .attr("y1", that.y(that.average_count(that.data, that.metaData)))
+                    .attr("x2", that.width)
+                    .attr("y2", that.y(that.average_count(that.data, that.metaData)))
+                    .attr("stroke-width", 1)
+                    .attr("stroke", "black")
+                    .attr("title", that.average_count(that.data, that.metaData))   
 }
 
 
@@ -166,19 +220,13 @@ PrioVis.prototype.updateVis = function(){
  * be defined here.
  * @param selection
  */
-PrioVis.prototype.onSelectionChange= function (selectionStart, selectionEnd){
+PrioVis.prototype.onSelectionChange= function (ranges){
     that = this;
 
-    // TODO: call wrangle function
-    console.log(selectionStart);
-    console.log(selectionEnd);
+    this.ranges = ranges;
 
-    this.selectionStart  =  selectionStart;
-    this.selectionEnd =  selectionEnd;
-
-    this.wrangleData(function(d){return d.time>=that.selectionStart && d.time<=that.selectionEnd;})
+    this.wrangleData(function(d,r){return d.time>=r[0] && d.time<=r[1];})
     this.updateVis();
-
 
 }
 
@@ -190,6 +238,60 @@ PrioVis.prototype.onSelectionChange= function (selectionStart, selectionEnd){
 * ==================================
 *
 * */
+
+PrioVis.prototype.zip = function(source1, source2){
+    var res=[];
+    source1.forEach(function(o,i){
+       res.push(o);
+       res.push(source2[i]);
+    });
+    return res;
+}
+
+PrioVis.prototype.get_growth_rates = function(nested_data){
+
+   if (this.ranges.length > 1) {
+       return nested_data.chunk(2).map(function(d) {
+            return {
+                "ellipse-color": d[0]["meta_data"]["item-color"],
+                "ellipse-title": d[0]["meta_data"]["item-title"], 
+                "growth_rate": d[1]["count"]/d[0]["count"]-1,
+                "count": d3.max([d[1]["count"], d[0]["count"]])
+            }
+        });
+   } else {
+     return [];
+    }
+}
+
+
+//From: http://stackoverflow.com/questions/8495687/split-array-into-chunks/10456644#10456644
+Array.prototype.chunk = function(chunkSize) {
+    var array=this;
+    return [].concat.apply([],
+        array.map(function(elem,i) {
+            return i%chunkSize ? [] : [array.slice(i,i+chunkSize)];
+        })
+    );
+}
+
+PrioVis.prototype.average_count = function(d) {
+    var nested_data = this.displayData;//this.nest_data(this.data, this.metaData);
+
+    var res = d3.sum(nested_data, function(d){return d.count;}) / nested_data.length;
+
+    return res;
+}
+
+PrioVis.prototype.nest_data = function(filtered_data, meta_data) {
+    return d3.range(0, 16).map(function (i) {
+            return {
+                "meta_data": meta_data.priorities[i],
+                "count": d3.sum(filtered_data.map(function(d) { return d.prios[i]; })) / filtered_data.length
+              }
+    });
+}
+
 
 
 
@@ -206,15 +308,30 @@ PrioVis.prototype.filterAndAggregate = function(_filter){
     var filter = _filter || function(){return true;}
 
     var that = this;
-    
-    var filtered_data = this.data.filter(filter);
 
-    var res = d3.range(0, 16).map(function (i) {
-        return {
-            "meta_data": that.metaData.priorities[i],
-            "count": d3.sum(filtered_data.map(function(d) { return d.prios[i]; }))
-          }
-    });
+    if (this.ranges.length > 1) {
+    
+        var filtered_data = [
+            this.data.filter(function(d) {
+                return filter(d, that.ranges[0])
+            }),
+            this.data.filter(function(d) {
+                return filter(d, that.ranges[1])
+            })
+        ]
+
+        var res_1 = this.nest_data(filtered_data[0], this.metaData);
+        var res_2 = this.nest_data(filtered_data[1], this.metaData);
+
+        var res = this.zip(res_1, res_2);
+    } else {
+         var filtered_data = this.data.filter(function(d) {
+            return filter(d, that.ranges[0])
+        });
+
+        var res = this.nest_data(filtered_data, this.metaData);
+    }
+
 
 
 

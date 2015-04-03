@@ -63,6 +63,13 @@ CountVis.prototype.initVis = function(){
       .append("g")
         .attr("transform", "translate(" + this.margin.left + "," + this.margin.top + ")");
 
+    this.svg.append("text")
+        .attr("class", "vis_label")
+        .text("Number of votes -- scroll to zoom, brush to select range:")
+        .attr("x", 5)
+        .attr("y", -5)
+
+
     //TODO: implement the slider -- see example at http://bl.ocks.org/mbostock/6452972
     this.addSlider(this.parentElement.select("svg"));
 
@@ -108,8 +115,10 @@ CountVis.prototype.initVis = function(){
         );
 
       this.brush.extentAdaption(
-        function (selection) {
+        function (selection, i) {
             selection.attr("height", that.height);
+            selection.append("text").text("brush " + i);
+
           }
         );
 

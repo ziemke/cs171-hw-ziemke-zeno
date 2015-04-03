@@ -116,8 +116,11 @@
 
                  $(MyEventHandler).bind("selectionChanged", function(event, brush){
                       var ranges = brush.extent();
+
+                      if (ranges.length == 0) return;
+
                       age_vis.onSelectionChange(ranges[0][0], ranges[0][1]);
-                      prio_vis.onSelectionChange(ranges[0][0], ranges[0][1]);
+                      prio_vis.onSelectionChange(ranges);
 
                     if (ranges.length == 1)
                         d3.select("#brushInfo").text(dateFormat(ranges[0][0]) + " -> " + dateFormat(ranges[0][1]))
@@ -187,6 +190,7 @@
 			
 			// HELPERS 
 
+
             var dateFormat = d3.time.format("%Y-%m-%d");
 			
 			 var aggregateCountsForRange = function(from, to){
@@ -218,19 +222,23 @@
 
     <pre>
 - can not move brush call to separate function
-- duplicate ticks on x axis most left
 - errors in agevis data ("age" 2009, etc.)
 - handling of ages > 100 ok?
-- priovis, how to remove axis lines?
-- alternative for hide tick css hack?
 - video or image als formatting template? (axis, ticks, etc.)
-- necessary to be able to deactivate brushing?
-- best way to implement chart title labels?
     </pre>
 
     <pre>
 - had to patch external lib multibrush to only allow 2 brushes max
 - instruction > click outside of brush without moving mouse to reset brushes
+- normalize data
+- handling of outlines/erros in agevis
     </pre>
+	
+	 <pre>
+		 - extra credit tasks
+		 - update "current brushes" text, after all brushes are deactivated
+         - put brushes labels
+         - check calculating of averages (brushes)
+</pre>
 </body>
 </html>
