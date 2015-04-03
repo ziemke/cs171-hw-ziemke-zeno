@@ -534,6 +534,8 @@ d3.svg.multibrush = function() {
     drawExtents();
     if(x) redrawX(brushElement);
     if(y) redrawY(brushElement);
+
+     d3.select("#brushInfo").text("");
     return brush;
   };
 

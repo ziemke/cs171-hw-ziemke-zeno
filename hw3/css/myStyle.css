@@ -77,3 +77,9 @@ body{
 #prioVis {
   margin-top: 30px;
 }
+
+.brush_label {
+  font: 10px sans-serif;
+  text-anchor: middle;
+  fill: grey;
+}

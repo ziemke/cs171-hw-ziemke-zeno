@@ -121,6 +121,7 @@
 
                       age_vis.onSelectionChange(ranges[0][0], ranges[0][1]);
                       prio_vis.onSelectionChange(ranges);
+                      count_vis.onSelectionChange(ranges);
 
                     if (ranges.length == 1)
                         d3.select("#brushInfo").text(dateFormat(ranges[0][0]) + " -> " + dateFormat(ranges[0][1]))
@@ -236,9 +237,8 @@
 	
 	 <pre>
 		 - extra credit tasks
-		 - update "current brushes" text, after all brushes are deactivated
-         - put brushes labels
          - check calculating of averages (brushes)
+         - agevis and multibrush?
 </pre>
 </body>
 </html>

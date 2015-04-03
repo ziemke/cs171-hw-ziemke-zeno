@@ -70,6 +70,15 @@ CountVis.prototype.initVis = function(){
         .attr("y", -5)
 
 
+    this.brush_labels = [] 
+
+    this.brush_labels.push(this.svg.append("text")
+      .attr("class", "brush_label"))
+
+    this.brush_labels.push(this.svg.append("text")
+      .attr("class", "brush_label"))
+
+
     //TODO: implement the slider -- see example at http://bl.ocks.org/mbostock/6452972
     this.addSlider(this.parentElement.select("svg"));
 
@@ -208,11 +217,20 @@ CountVis.prototype.updateVis = function(){
  * be defined here.
  * @param selection
  */
-CountVis.prototype.onSelectionChange= function (selectionStart, selectionEnd){
+CountVis.prototype.onSelectionChange= function (ranges){
 
+    that = this;
     // TODO: call wrangle function
+    d3.selectAll(".brush_label").text("");
+ 
+      ranges.forEach(function(r, i) {
 
-    // do nothing -- no update when brushing
+        that.brush_labels[i]
+          .text("Brush " + (i+1))
+          .attr("y", 15)
+          .attr("x", (that.x(r[0]) + that.x(r[1])) /2)
+      });
+    
 
 
 }
