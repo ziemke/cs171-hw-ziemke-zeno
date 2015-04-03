@@ -117,16 +117,16 @@
                  $(MyEventHandler).bind("selectionChanged", function(event, brush){
                       var ranges = brush.extent();
 
-                      if (ranges.length == 0) return;
+                        if (ranges.length == 1)
+                            d3.select("#brushInfo").text(dateFormat(ranges[0][0]) + " -> " + dateFormat(ranges[0][1]))
+                        else if (ranges.length == 2)
+                            d3.select("#brushInfo").text(dateFormat(ranges[0][0]) + " -> " + dateFormat(ranges[0][1]) + "  &  " + dateFormat(ranges[1][0]) + " -> " + dateFormat(ranges[1][1]))
+                        else
+                            d3.select("#brushInfo").text("")
 
-                      age_vis.onSelectionChange(ranges[0][0], ranges[0][1]);
+                      age_vis.onSelectionChange(ranges);
                       prio_vis.onSelectionChange(ranges);
                       count_vis.onSelectionChange(ranges);
-
-                    if (ranges.length == 1)
-                        d3.select("#brushInfo").text(dateFormat(ranges[0][0]) + " -> " + dateFormat(ranges[0][1]))
-                    else
-                        d3.select("#brushInfo").text(dateFormat(ranges[0][0]) + " -> " + dateFormat(ranges[0][1]) + "  &  " + dateFormat(ranges[1][0]) + " -> " + dateFormat(ranges[1][1]))
                     
                   });
 

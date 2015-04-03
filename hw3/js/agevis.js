@@ -172,17 +172,23 @@ AgeVis.prototype.updateVis = function(){
  * be defined here.
  * @param selection
  */
-AgeVis.prototype.onSelectionChange= function (selectionStart, selectionEnd){
+AgeVis.prototype.onSelectionChange= function (ranges){
     that = this;
 
     // TODO: call wrangle function
    // console.log(selectionStart);
    // console.log(selectionEnd);
 
-    this.selectionStart  =  selectionStart;
-    this.selectionEnd =  selectionEnd;
+   if (ranges.length > 0) { 
+        this.selectionStart  =  ranges[0][0];
+        this.selectionEnd =  ranges[0][1];
 
-    this.wrangleData(function(d){return d.time>=that.selectionStart && d.time<=that.selectionEnd;})
+        this.wrangleData(function(d){return d.time>=that.selectionStart && d.time<=that.selectionEnd;})
+    } else {
+        this.wrangleData(null)
+    }
+
+
     this.updateVis();
 
 

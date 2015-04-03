@@ -1,5 +1,6 @@
 d3.svg.multibrush = function() {
 
+
   // From d3/scale/scale.js
   function d3_scaleExtent(domain) {
     var start = domain[0], stop = domain[domain.length - 1];
@@ -33,7 +34,7 @@ d3.svg.multibrush = function() {
     };
   }
 
-  var event = d3.dispatch("brushstart", "brush", "brushend"),
+  var event = d3.dispatch("brushstart", "brush", "brushend", "clear"),
       brushElement,
       x = null, // x-scale, optional
       y = null, // y-scale, optional
@@ -535,8 +536,8 @@ d3.svg.multibrush = function() {
     if(x) redrawX(brushElement);
     if(y) redrawY(brushElement);
 
-     d3.select("#brushInfo").text("");
-     d3.selectAll(".brush_label").text("");
+    var event_ = event.of(this, arguments)
+    event_({type: "clear"});
     return brush;
   };
 

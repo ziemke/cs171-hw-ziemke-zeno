@@ -224,8 +224,13 @@ PrioVis.prototype.onSelectionChange= function (ranges){
     that = this;
 
     this.ranges = ranges;
+    if (ranges.length > 0) { 
+        this.wrangleData(function(d,r){return d.time>=r[0] && d.time<=r[1];})
+    } else {
+        this.wrangleData(null)
+    }
 
-    this.wrangleData(function(d,r){return d.time>=r[0] && d.time<=r[1];})
+    
     this.updateVis();
 
 }

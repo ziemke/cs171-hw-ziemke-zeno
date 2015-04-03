@@ -109,12 +109,12 @@ CountVis.prototype.initVis = function(){
         .y1(function(d) { return that.y(d.count); });
 
 
-    this.brush = d3.svg.multibrush()
+    this.brush = d3.svg.multibrush(this.eventHandler)
       .on("brush", function(){
-        //console.log(that.brush.extent());
+          $(that.eventHandler).trigger("selectionChanged", that.brush);
+      })
+      .on("clear", function() {
         $(that.eventHandler).trigger("selectionChanged", that.brush);
-
-
       });
 
       this.brush.resizeAdaption(
