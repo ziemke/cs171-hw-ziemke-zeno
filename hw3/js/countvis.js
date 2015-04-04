@@ -201,6 +201,9 @@ CountVis.prototype.updateVis = function(){
       //.transition()
       .attr("d", this.area);
 
+
+//      path.call(d3.behavior.zoom().x(this.x).y(this.y).on("zoom", this.updateVis()));
+
     path.exit()
       .remove();
 
