@@ -77,11 +77,12 @@ PrioVis.prototype.initVis = function(){
 
     this.xAxis = d3.svg.axis()
         .scale(this.x)
-        .orient("bottom");
+        .orient("bottom")
 
     this.yAxis = d3.svg.axis()
         .scale(this.y)
-        .orient("left");
+        .orient("left")
+        .tickFormat(d3.format("%"));
 
 
     this.svg.append("g")
@@ -293,7 +294,7 @@ PrioVis.prototype.nest_data = function(filtered_data, meta_data) {
     return d3.range(0, 16).map(function (i) {
             return {
                 "meta_data": meta_data.priorities[i],
-                "count": d3.sum(filtered_data.map(function(d) { return d.prios[i]; })) / filtered_data.length
+                "count": d3.sum(filtered_data.map(function(d) { return d.prios[i]; })) / d3.sum(filtered_data.map(function(d) { return d3.sum(d.prios); })) // / filtered_data.length
               }
     });
 }
